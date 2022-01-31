@@ -256,7 +256,8 @@ df_col <- right_join(
     df_health
   ),
   by = "adm2_file_code"
-)
+) %>%
+  filter(!is.na(adm1_es))
 
 # write_csv(
 #   df_col,
