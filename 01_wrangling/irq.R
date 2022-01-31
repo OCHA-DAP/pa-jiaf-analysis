@@ -111,6 +111,7 @@ df_ocha_clusters <- df_ocha_clusters_raw %>%
 # Pcodes needed for IS table,
 # but only admin 1
 df_pcodes <- df_ocha_clusters %>%
+  select(adm1_pcode, adm1_en) %>%
   distinct() %>%
   drop_na()
 
@@ -150,7 +151,8 @@ df_fs <- read_csv(
   mutate(date = as.Date(Date, format = "%d/%m/%Y"), sector = "fs") %>%
   arrange(desc(date)) %>%
   distinct(adm1_pcode, .keep_all = TRUE) %>%
-  select(adm1_pcode, pin)
+  select(adm1_pcode, pin) %>%
+  left_join(df_pcodes, by = "adm1_pcode")
 
 # Education
 # Note that the PINs are non integer values -- not sure
@@ -197,7 +199,7 @@ df_clusters <- bind_rows(
 
 
 df_irq <- bind_rows(
-  df_ocha %>% mutate(pin = as.numeric(pin)),
+  df_ocha,
   df_clusters
 ) %>%
   mutate(
