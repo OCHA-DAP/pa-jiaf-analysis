@@ -148,15 +148,15 @@ df_fs <- read_csv(
     adm1_pcode = PCode,
     pin = `Insufficient food consumption`
   ) %>%
-  mutate(date = as.Date(Date, format = "%d/%m/%Y"), sector = "fs") %>%
+  mutate(date = as.Date(Date, format = "%d/%m/%Y"), 
+         sector = "fs",
+         pin = as.numeric(gsub(",", "", pin))) %>%
   arrange(desc(date)) %>%
   distinct(adm1_pcode, .keep_all = TRUE) %>%
   select(adm1_pcode, pin) %>%
   left_join(df_pcodes, by = "adm1_pcode")
 
 # Education
-# Note that the PINs are non integer values -- not sure
-# if we should be concerned
 ed_fp <- file.path(
   file_paths$cluster_dir,
   "Iraq - Education PiN & JIAF calculation - 2022 HNO.xlsx"
@@ -186,7 +186,7 @@ df_wash <- read_in_disagg(wash_fp) %>%
 
 # Combine the clusters
 df_clusters <- bind_rows(
-  df_fs %>% mutate(pin = as.numeric(pin)),
+  df_fs,
   df_ed,
   df_wash
 ) %>%
