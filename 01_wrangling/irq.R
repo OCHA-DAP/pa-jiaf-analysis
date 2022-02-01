@@ -94,27 +94,6 @@ df_pcodes <- df_ocha %>%
 #### CLUSTER DATA ####
 ######################
 
-# Food security
-# Duplicates per admin 1 - sort by date and take the latest
-# df_fs <- read_csv(
-#   file.path(
-#     file_paths$cluster_dir,
-#     "Iraq Food Security & Malnutrition Rates - Food Security @ Governorate Level.csv"
-#   )
-# ) %>%
-#   slice(-1) %>%
-#   rename(
-#     adm1_pcode = PCode,
-#     pin = `Insufficient food consumption`
-#   ) %>%
-#   mutate(date = as.Date(Date, format = "%d/%m/%Y"), 
-#          sector = "fs",
-#          pin = as.numeric(gsub(",", "", pin))) %>%
-#   arrange(desc(date)) %>%
-#   distinct(adm1_pcode, .keep_all = TRUE) %>%
-#   select(adm1_pcode, pin) %>%
-#   left_join(df_pcodes, by = "adm1_pcode")
-
 # Education
 ed_fp <- file.path(
   file_paths$cluster_dir,
@@ -146,7 +125,6 @@ df_wash <- read_in_disagg(wash_fp) %>%
 
 # Combine the clusters
 df_clusters <- bind_rows(
-#  df_fs,
   df_ed,
   df_wash
 ) %>%
