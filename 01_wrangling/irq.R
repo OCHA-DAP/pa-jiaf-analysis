@@ -142,7 +142,7 @@ df_irq <- bind_rows(
 ) %>%
   mutate(
     adm0_pcode = "IRQ",
-    adm0_en = "irq",
+    adm0_en = "Iraq",
     .before = adm1_en,
   )
 
