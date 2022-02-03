@@ -1,15 +1,12 @@
 library(tidyverse)
+source(here::here("99_helpers", "helpers.R"))
 
 # Sample analysis to test our understanding
 # of what needs to be done
 
-df <- read_csv(
-  file.path(
-    Sys.getenv("JIAF_DATA_DIR"),
-    "Data aggregated for analysis",
-    "lby_pins_2022.csv"
-  )
-)
+file_paths <- get_paths("Libya")
+
+df <- read_csv(file_paths$save_path)
 
 max_df <- df %>%
   mutate(group = case_when(
