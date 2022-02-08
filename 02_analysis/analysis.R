@@ -3,9 +3,9 @@ source(here::here("99_helpers", "helpers.R"))
 
 # Sample analysis to test our understanding
 # of what needs to be done
-
-file_paths <- get_paths("Libya")
-
+analyze_pins <- function(country_name, iso3) {
+  
+file_paths <- get_paths(country_name)
 df <- read_csv(file_paths$save_path)
 
 max_df <- df %>%
@@ -21,44 +21,27 @@ max_df <- df %>%
     sex,
     age
   ) %>%
-  summarize(
-    max_pin = max(pin),
-    max_sector = paste(sector[pin == max_pin], collapse = ", "),
-    .groups = "drop"
-  ) 
-
-# analysis example
+  filter(pin == max(pin))
 
 df_sample <- max_df %>%
-  group_by(group) %>%
+  group_by(group, sector) %>%
   summarize(
-    pin = sum(max_pin),
+    pin = sum(pin),
     .groups = "drop"
-  )
-
-df_sample
-
-# driving sectors
-
-df_drivers <- max_df %>%
-  filter(group != "intersectoral") %>%
-  group_by(group, max_sector) %>%
-  summarize(
-    max_count = n(),
-    pin = sum(max_pin),
-    .groups = "drop_last"
   ) %>%
-  arrange(desc(pin), .by_group = TRUE) %>%
-  mutate(
-    max_count_pct = scales::percent(max_count / sum(max_count), accuracy = 1),
-    pin_pct = scales::percent(pin / sum(pin), accuracy = 1)
-  )
+  add_row(group = "sectoral", sector = "intersectoral", 
+          pin = df_sample %>% filter(group == "sectoral") %>%
+            summarize(sum(pin)) %>% pull ) %>%
+  arrange(group, desc(pin))
 
-# df_drivers %>%
-#   write_csv(
-#     file.path(
-#       Sys.getenv("JIAF_DATA_DIR"),
-#       "Data analyzed",
-#       "lby_sample_drivers.csv"
-#     )
-#   )
+df_sample %>%
+   write_csv(
+     file.path(
+       Sys.getenv("JIAF_DATA_DIR"),
+       "Data analyzed",
+       paste0(iso3, "_sample_drivers.csv")
+     )
+   )
+}
+
+analyze_pins("Libya", "lby")
