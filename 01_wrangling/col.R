@@ -265,7 +265,8 @@ df_col <- right_join(
       "sectoral"
     ),
     pin = replace_na(pin, 0)
-  )
+  ) %>%
+  select(-adm2_file_code)
 
 write_csv(
   df_col,
