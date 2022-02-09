@@ -1,19 +1,27 @@
 #' Generate directories and paths for PiN analysis
 #'
 #' @param country String with country name
+#' @param country_name If `country` is not an easily interpretable
+#'     country name, and thus retrieval of an ISO3 code impossible,
+#'     pass `country_name` instead.
 #'
 #' @return Named list of:
 #'     * OCHA data directory
 #'     * Cluster data directory
 #'     * Save file path
-get_paths <- function(country) {
+get_paths <- function(country, country_name = NULL) {
+  if (is.null(country_name)) {
+    country_name <- country
+  }
+
   # iso3 for use in save path
   iso3 <- tolower( # nolint
     countrycode::countryname(
-      country,
+      country_name,
       destination = "iso3c"
     )
   )
+
   data_dir <- Sys.getenv("JIAF_DATA_DIR")
 
   # directory with ocha provided data
