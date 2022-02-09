@@ -263,7 +263,8 @@ df_col <- right_join(
       sector == "intersectorial",
       "intersectoral",
       "sectoral"
-    )
+    ),
+    pin = replace_na(pin, 0)
   )
 
 write_csv(
