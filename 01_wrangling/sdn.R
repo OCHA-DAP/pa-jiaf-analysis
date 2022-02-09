@@ -97,7 +97,8 @@ df_edu <- df_edu_raw %>%
     cols = -adm2_pcode,
     names_to = c("sector", ".value", "population_group"),
     names_sep = "_",
-  )
+  ) %>%
+  drop_na()
 
 # Combine clusters
 df_clusters <- bind_rows(
