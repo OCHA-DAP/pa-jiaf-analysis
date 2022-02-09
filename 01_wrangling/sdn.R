@@ -72,7 +72,7 @@ df_gbv <- purrr::map2_dfr(
   select(
     adm2_pcode = admin2pcode,
     population_group,
-    pin
+    pin = gbv_pin
   ) %>%
   drop_na(adm2_pcode) %>%
   mutate(sector = "gbv")
