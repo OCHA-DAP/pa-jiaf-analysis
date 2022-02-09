@@ -177,6 +177,7 @@ df_lby <- bind_rows(
   mutate(
     adm0_pcode = "LBY",
     adm0_en = "Libya",
+    adm1_pcode = substr(adm2_pcode, 1, 4),
     .before = adm2_pcode
   ) %>%
   mutate(
