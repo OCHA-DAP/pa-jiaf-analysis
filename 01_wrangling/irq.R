@@ -7,6 +7,32 @@ library(zoo)
 source(here::here("99_helpers", "helpers.R"))
 
 ###################
+#### FUNCTIONS ####
+###################
+
+#' @importFrom dplyr %>%
+read_in_disagg <- function(fp) {
+  groups <- c("In-Camp-IDPs", "Out-of-Camp-IDPs", "Returnees")
+  purrr::map_dfr(
+    groups,
+    ~ readxl::read_excel(
+      fp,
+      sheet = paste0(.x, "-District"),
+      skip = 4
+    ) %>%
+      dplyr::mutate(
+        population_group = .x
+      ) %>%
+      dplyr::rename(
+        adm1_pcode = admin1Pcode,
+        adm2_pcode = admin2Pcode,
+        adm1_en = gov_name,
+        adm2_en = dist_name
+      )
+  )
+}
+
+###################
 #### DATA DIRS ####
 ###################
 
@@ -24,25 +50,7 @@ ocha_fp <- file.path(
   )
 )
 
-groups <- c("In-Camp-IDPs", "Out-of-Camp-IDPs", "Returnees", "Overall")
-
-df_ocha_raw <- map_dfr(
-  groups,
-  ~ read_excel(
-    ocha_fp,
-    sheet = paste0(.x, "-District"),
-    skip = 4
-  ) %>%
-    mutate(
-      population_group = .x
-    ) %>%
-    rename(
-      adm1_pcode = admin1Pcode,
-      adm2_pcode = admin2Pcode,
-      adm1_en = gov_name,
-      adm2_en = dist_name
-    )
-)
+df_ocha_raw <- read_in_disagg(ocha_fp)
 
 ########################
 #### CREATE OCHA DF ####
@@ -52,21 +60,20 @@ df_ocha_raw <- map_dfr(
 # drop strange empty columns
 df_ocha <- df_ocha_raw %>%
   pivot_longer(
-    cols = ends_with("pin") | ends_with("acute") | ends_with("sev"),
+    cols = ends_with("pin"),
     names_to = c("sector", ".value"),
     names_sep = "_"
   ) %>%
-  select(-c(mcna, pop_num, pop_sch, `pop_0-17`, acute, sev)) %>%
-  drop_na(adm1_en) %>%
+  select(adm2_pcode, population_group, sector, pin) %>%
+  drop_na(adm2_pcode) %>%
   mutate(
-    adm1_en = na_if(adm1_en, "Total"),
     source = "ocha"
   )
 
 # Pcodes needed for IS table,
 # but only admin 1
-df_pcodes <- df_ocha %>%
-  select(adm1_pcode, adm1_en) %>%
+df_pcodes <- df_ocha_raw %>%
+  select(starts_with("adm")) %>%
   distinct() %>%
   drop_na()
 
@@ -81,7 +88,7 @@ ed_fp <- file.path(
 )
 
 df_ed <- read_in_disagg(ed_fp) %>%
-  select(adm1_pcode, adm1_en, adm2_pcode, adm2_en, pin) %>%
+  select(adm2_pcode, population_group, pin) %>%
   drop_na() %>%
   mutate(sector = "ed")
 
@@ -93,13 +100,8 @@ wash_fp <- file.path(
   "Iraq 2022 HNO Analysis - WASH Cluster - 5 Oct.xlsx"
 )
 
-# It looks like the Overall tab final PIN is in pin2
 df_wash <- read_in_disagg(wash_fp) %>%
-  mutate(pin = ifelse(population_group == "Overall",
-    pin2,
-    pin
-  )) %>%
-  select(adm1_pcode, adm1_en, adm2_pcode, adm2_en, pin) %>%
+  select(adm2_pcode, population_group, pin) %>%
   drop_na() %>%
   mutate(sector = "wash")
 
@@ -120,6 +122,13 @@ df_irq <- bind_rows(
   df_ocha,
   df_clusters
 ) %>%
+  left_join(
+    df_pcodes,
+    by = "adm2_pcode"
+  ) %>%
+  relocate(adm1_en:adm2_en,
+    .before = 1
+  ) %>%
   mutate(
     adm0_pcode = "IRQ",
     adm0_en = "Iraq",
