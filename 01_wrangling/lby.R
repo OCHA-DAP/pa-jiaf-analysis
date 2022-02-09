@@ -6,31 +6,17 @@ library(janitor)
 #### DATA DIRS ####
 ###################
 
-data_dir <- Sys.getenv("JIAF_DATA_DIR")
+# helper functions to get paths
+source(here::here("99_helpers", "helpers.R"))
 
-ocha_dir <- file.path(
-  data_dir,
-  "Data from country offices - OCHA",
-  "Libya"
-)
-
-cluster_dir <- file.path(
-  data_dir,
-  "Data from country offices - Clusters",
-  "Libya"
-)
-
-save_dir <- file.path(
-  data_dir,
-  "Data aggregated for analysis"
-)
+file_paths <- get_paths("Libya")
 
 ############################
 #### OCHA PROVIDED DATA ####
 ############################
 
 ocha_fp <- file.path(
-  ocha_dir,
+  file_paths$ocha_dir,
   "libya-2022-hpc-intersectoral-and-sectoral-targets-and-pin-2022_15nov2021.xlsx" # nolint
 )
 
@@ -49,7 +35,7 @@ df_ocha_is_raw <- read_excel(ocha_fp, sheet = "Intersectoral PiN 2022")
 
 df_gbv_raw <- read_excel(
   file.path(
-    cluster_dir,
+    file_paths$cluster_dir,
     "20210824_Libya_2022_HNO_PiN_FINAL GBV.xlsx"
   ),
   sheet = "GBV_PiN",
@@ -58,7 +44,7 @@ df_gbv_raw <- read_excel(
 
 df_fs_raw <- read_excel(
   file.path(
-    cluster_dir,
+    file_paths$cluster_dir,
     "Libya 2022 FS.xlsx"
   ),
   sheet = "Sector PiN and Severity",
@@ -192,12 +178,16 @@ df_lby <- bind_rows(
     adm0_pcode = "LBY",
     adm0_en = "Libya",
     .before = adm2_pcode
+  ) %>%
+  mutate(
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
   )
 
-# write_csv(
-#   df_lby,
-#   file.path(
-#     save_dir,
-#     "lby_pins_2022.csv"
-#   )
-# )
+write_csv(
+  df_lby,
+  file_paths$save_path
+)

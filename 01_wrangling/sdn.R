@@ -142,9 +142,14 @@ df_sdn <- bind_rows(
     adm0_en = "Sudan",
     adm0_pcode = "SDN",
     .before = adm1_en,
-  )
+  ) %>%
+  mutate(sector_general = ifelse(
+    sector == "intersectoral",
+    "intersectoral",
+    "sectoral"
+  ))
 
-# write_csv(
-#   df_sdn,
-#   file_paths$save_path
-# )
+write_csv(
+  df_sdn,
+  file_paths$save_path
+)

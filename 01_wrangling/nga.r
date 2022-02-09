@@ -27,7 +27,7 @@ df_ocha_raw <- read_excel(
 )
 
 df_ocha_clusters <- df_ocha_raw %>%
-  select(adm2_en= LGA, WASH:`PRO-HLP`) %>%
+  select(adm2_en = LGA, WASH:`PRO-HLP`) %>%
   pivot_longer(
     cols = WASH:`PRO-HLP`,
     names_to = "sector",
@@ -69,7 +69,7 @@ df_pcodes <- read_excel(
 #### CLUSTER DATA ####
 ######################
 
-# Shelter & NFIs
+# Shelter and NFIs
 df_shelter <- read_excel(
   file.path(
     file_paths$cluster_dir,
@@ -81,17 +81,21 @@ df_shelter <- read_excel(
   clean_names() %>%
   select(
     adm2_en = lga,
-    id_ps:inaccessible) %>%
+    id_ps:inaccessible
+  ) %>%
   pivot_longer(
     cols = -adm2_en,
     names_to = "population_group",
     values_to = "pin"
   ) %>%
-  mutate(population_group = ifelse(population_group == "id_ps",
-                                   "idps",
-                                   population_group),
-         sector = "Shelter & NFIs")
-  
+  mutate(
+    population_group = ifelse(population_group == "id_ps",
+      "idps",
+      population_group
+    ),
+    sector = "Shelter & NFIs"
+  )
+
 
 # Education
 df_edu <- read_excel(
@@ -115,13 +119,13 @@ df_edu <- read_excel(
   mutate(
     population_group = case_when(
       population_group == "total_id_ps" ~ "idps",
-      TRUE ~ str_match(population_group, "total_(.*)")[,2]
+      TRUE ~ str_match(population_group, "total_(.*)")[, 2]
     ),
     sector = "Education"
   )
 
 # Combine clusters
-df_clusters <- df_shelter %>% 
+df_clusters <- df_shelter %>%
   mutate(source = "cluster")
 
 
@@ -131,7 +135,8 @@ df_clusters <- df_shelter %>%
 
 df_nga <- bind_rows(
   df_ocha,
-  df_clusters)%>%
+  df_clusters
+) %>%
   left_join(df_pcodes,
     by = "adm2_en",
   ) %>%
@@ -142,7 +147,12 @@ df_nga <- bind_rows(
     .before = adm1_pcode,
   ) %>%
   mutate(
-    population_group = replace_na(population_group, "all")
+    population_group = replace_na(population_group, "all"),
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
   )
 
 write_csv(

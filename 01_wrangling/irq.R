@@ -7,49 +7,6 @@ library(zoo)
 source(here::here("99_helpers", "helpers.R"))
 
 ###################
-#### FUNCTIONS ####
-###################
-
-read_in_disagg <- function(filename) {
-  df_in_camp_idps <- read_excel(
-    filename,
-    sheet = "In-Camp-IDPs-District",
-    skip = 4
-  ) %>%
-    mutate(population_group = "In-Camp IDPs")
-  df_out_of_camp_idps <- read_excel(
-    filename,
-    sheet = "Out-of-Camp-IDPs-District",
-    skip = 4
-  ) %>%
-    mutate(population_group = "Out-of-Camp IDPs")
-  df_returnees <- read_excel(
-    filename,
-    sheet = "Returnees-District",
-    skip = 4
-  ) %>%
-    mutate(population_group = "Returnees")
-  df_overall <- read_excel(
-    filename,
-    sheet = "Overall-District",
-    skip = 4
-  ) %>%
-    mutate(population_group = "Overall")
-
-  df <- bind_rows(
-    df_in_camp_idps,
-    df_out_of_camp_idps,
-    df_returnees,
-    df_overall
-  ) %>%
-    rename(
-      adm1_pcode = admin1Pcode, adm2_pcode = admin2Pcode,
-      adm1_en = gov_name, adm2_en = dist_name
-    ) 
-  return(df)
-}
-
-###################
 #### DATA DIRS ####
 ###################
 
@@ -61,10 +18,31 @@ file_paths <- get_paths("Iraq")
 
 ocha_fp <- file.path(
   file_paths$ocha_dir,
-  "Iraq 2022 HNO Final Intersectoral & Cluster PIN Estimates - Updated 20211129.xlsx"
+  paste(
+    "Iraq 2022 HNO Final Intersectoral",
+    "& Cluster PIN Estimates - Updated 20211129.xlsx"
+  )
 )
 
-df_ocha_raw <- read_in_disagg(ocha_fp)
+groups <- c("In-Camp-IDPs", "Out-of-Camp-IDPs", "Returnees", "Overall")
+
+df_ocha_raw <- map_dfr(
+  groups,
+  ~ read_excel(
+    ocha_fp,
+    sheet = paste0(.x, "-District"),
+    skip = 4
+  ) %>%
+    mutate(
+      population_group = .x
+    ) %>%
+    rename(
+      adm1_pcode = admin1Pcode,
+      adm2_pcode = admin2Pcode,
+      adm1_en = gov_name,
+      adm2_en = dist_name
+    )
+)
 
 ########################
 #### CREATE OCHA DF ####
@@ -80,8 +58,10 @@ df_ocha <- df_ocha_raw %>%
   ) %>%
   select(-c(mcna, pop_num, pop_sch, `pop_0-17`, acute, sev)) %>%
   drop_na(adm1_en) %>%
-  mutate(adm1_en = na_if(adm1_en, "Total"),
-         source = "ocha")
+  mutate(
+    adm1_en = na_if(adm1_en, "Total"),
+    source = "ocha"
+  )
 
 # Pcodes needed for IS table,
 # but only admin 1
@@ -144,9 +124,16 @@ df_irq <- bind_rows(
     adm0_pcode = "IRQ",
     adm0_en = "Iraq",
     .before = adm1_en,
+  ) %>%
+  mutate(
+    sector_general = ifelse(
+      sector == "itc",
+      "intersectoral",
+      "sectoral"
+    )
   )
 
-# write_csv(
-#   df_irq,
-#   file_paths$save_path
-# )
+write_csv(
+  df_irq,
+  file_paths$save_path
+)

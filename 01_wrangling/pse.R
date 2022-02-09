@@ -7,7 +7,7 @@ library(stringr)
 ###################
 
 source(here::here("99_helpers", "helpers.R"))
-file_paths <- get_paths("oPt")
+file_paths <- get_paths("oPt", "Palestine")
 
 ############################
 #### OCHA PROVIDED DATA ####
@@ -192,6 +192,13 @@ df_clusters <- bind_rows(
 #### GENERATE FULL DATA ####
 ############################
 
+# note below we generate fake pcode columns
+# this is because we want to only use pcodes
+# for analysis. However, it looks like the
+# areas used for analysis for Palestine are a
+# mix of pcoded areas and non-pcoded areas,
+# so for simplicity just ignoring that for now.
+
 df_pse <- bind_rows(
   df_ocha,
   df_clusters
@@ -205,7 +212,19 @@ df_pse <- bind_rows(
   mutate(
     adm0_en = "oPt",
     adm0_pcode = "pse",
-    .before = adm1_en,
+    adm1_pcode = adm1_en,
+    .before = adm1_en
+  ) %>%
+  mutate(
+    adm2_pcode = adm2_en,
+    .before = adm2_en
+  ) %>%
+  mutate(
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
   )
 
 write_csv(

@@ -257,9 +257,16 @@ df_col <- right_join(
   ),
   by = "adm2_file_code"
 ) %>%
-  filter(!is.na(adm1_es))
+  filter(!is.na(adm1_es)) %>%
+  mutate(
+    sector_general = ifelse(
+      sector == "intersectorial",
+      "intersectoral",
+      "sectoral"
+    )
+  )
 
-# write_csv(
-#   df_col,
-#   file_paths$save_path
-# )
+write_csv(
+  df_col,
+  file_paths$save_path
+)
