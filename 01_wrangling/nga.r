@@ -147,7 +147,6 @@ df_nga <- bind_rows(
     .before = adm1_pcode,
   ) %>%
   mutate(
-    population_group = replace_na(population_group, "all"),
     sector_general = ifelse(
       sector == "intersectoral",
       "intersectoral",
