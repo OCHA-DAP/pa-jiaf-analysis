@@ -34,13 +34,12 @@ df_ocha_clusters <- df_ocha_raw %>%
   select(
     adm2_pcode, sector, population_group, condition, pin
   ) %>%
-  mutate(pin = ifelse(is.na(pin), 0, pin))
+  mutate(pin = replace_na(pin, 0))
 
 df_ocha_is <- df_ocha_raw %>%
   select(adm2_pcode, pin) %>%
   mutate(
-    pin = as.numeric(pin), sector = "intersectoral",
-    population_group = "all", condition = "all"
+    pin = as.numeric(pin), sector = "intersectoral"
   )
 
 df_ocha <- bind_rows(
@@ -60,8 +59,8 @@ gbv_fp <- file.path(
 )
 
 df_gbv <- purrr::map2_dfr(
-  c("IDPs", "Returnees", "Vulnerable Hosts", "Overall"),
-  c("idp", "ret", "vul", "all"),
+  c("IDPs", "Returnees", "Vulnerable Hosts"),
+  c("idp", "ret", "vul"),
   ~ read_excel(
     gbv_fp,
     sheet = .x,
@@ -72,10 +71,11 @@ df_gbv <- purrr::map2_dfr(
 ) %>%
   select(
     adm2_pcode = admin2pcode,
+    population_group,
     pin
   ) %>%
   drop_na(adm2_pcode) %>%
-  mutate(sector = "gbv", condition = "all")
+  mutate(sector = "gbv")
 
 # Education
 df_edu_raw <- read_excel(
@@ -91,18 +91,13 @@ df_edu_raw <- read_excel(
 df_edu <- df_edu_raw %>%
   select(
     adm2_pcode = `pcode admin2`,
-    edu_pin_all = edu_pin,
-    edu_pin_idp,
-    edu_pin_ret,
-    edu_pin_vul,
-    edu_pin_ref
+    starts_with("edu_pin_")
   ) %>%
   pivot_longer(
-    cols = contains("_pin_"),
+    cols = -adm2_pcode,
     names_to = c("sector", ".value", "population_group"),
     names_sep = "_",
-  ) %>%
-  mutate(condition = "all")
+  )
 
 # Combine clusters
 df_clusters <- bind_rows(
@@ -116,13 +111,20 @@ df_clusters <- bind_rows(
 ###############
 
 # OCHA data missing admin1 pcodes, use the edu data instead
+# There is an error is most pcodes where Abyei PCA area is
+# referred to as SD19101 but in the HDX pcodes, it is
+# actually code SD19001 (GBV data is correct)
 
 df_pcodes <- df_edu_raw %>%
-  select(
+  transmute(
     adm1_en = state,
     adm1_pcode = `p-code admin1`,
     adm2_en = locality,
-    adm2_pcode = `pcode admin2`
+    adm2_pcode = ifelse(
+      `pcode admin2` == "SD19101",
+      "SD19001",
+      `pcode admin2`
+    )
   ) %>%
   unique()
 
@@ -134,6 +136,11 @@ df_sdn <- bind_rows(
   df_ocha,
   df_clusters,
 ) %>%
+  mutate(adm2_pcode = ifelse(
+    adm2_pcode == "SD19101",
+    "SD19001",
+    adm2_pcode
+  )) %>%
   left_join(df_pcodes,
     by = "adm2_pcode",
   ) %>%
