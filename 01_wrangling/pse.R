@@ -211,7 +211,7 @@ df_pse <- bind_rows(
   relocate(adm1_en, .before = adm2_en) %>%
   mutate(
     adm0_en = "oPt",
-    adm0_pcode = "pse",
+    adm0_pcode = "PSE",
     adm1_pcode = adm1_en,
     .before = adm1_en
   ) %>%

@@ -143,7 +143,7 @@ df_nga <- bind_rows(
   relocate(adm1_pcode:adm2_pcode, .before = adm2_en) %>%
   mutate(
     adm0_en = "Nigeria",
-    adm0_pcode = "nga",
+    adm0_pcode = "NGA",
     .before = adm1_pcode,
   ) %>%
   mutate(
