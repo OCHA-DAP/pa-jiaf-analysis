@@ -14,18 +14,7 @@ save_path <- file.path(jiaf_dir, "Data analyzed")
 
 df <- map_dfr(list.files(file_dir, full.names = TRUE), read_csv) %>%
   select(
-    adm0_pcode,
-    adm1_pcode,
-    adm2_pcode,
-    adm3_pcode,
-    population_group,
-    condition,
-    age,
-    sex,
-    sector,
-    source,
-    sector_general,
-    pin
+    -matches("adm[0-9]{1}_[a-z]{2}$")
   ) %>%
   mutate(
     sector_group = ifelse(
@@ -59,7 +48,14 @@ max_df <- df %>%
   slice_max(adm_level) %>%
   unite(
     pop_group,
-    population_group:sex,
+    any_of(
+      c(
+        "population_group",
+        "sex",
+        "age",
+        "condition"
+      )
+    ),
     sep = ", ",
     na.rm = TRUE
   ) %>%
