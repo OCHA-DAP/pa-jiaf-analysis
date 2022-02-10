@@ -52,8 +52,7 @@ max_df <- df %>%
       c(
         "population_group",
         "sex",
-        "age",
-        "condition"
+        "age"
       )
     ),
     sep = ", ",
