@@ -35,7 +35,7 @@ df_ocha_clusters <- df_ocha_raw %>%
     adm2_pcode, sector, population_group, condition, pin
   ) %>%
   mutate(pin = replace_na(pin, 0)) %>%
-  group_by(adm2_pcode, sector, population_group) %>%
+  group_by(adm2_pcode, sector, population_group) %>% # take max by condition
   summarize(
     pin = max(pin),
     .groups = "drop"
