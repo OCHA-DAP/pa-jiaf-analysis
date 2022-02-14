@@ -1,5 +1,6 @@
 library("ggplot2")
 library("tidyverse")
+library("stringr")
 
 # TODO: refactor filepaths to helpers
 jiaf_dir <- Sys.getenv("JIAF_DATA_DIR")
@@ -20,7 +21,16 @@ df_pins <- read.csv(
     sector_group != "sectoral_cluster",
     adm0_pcode != "COL 2+"
   ) %>%
-  mutate(adm0_pcode = gsub("COL 3\\+", "COL", adm0_pcode)) %>%
+  mutate(
+    adm0_en = case_when(
+      adm0_pcode == "COL 3+" ~ "Colombia",
+      adm0_pcode == "IRQ" ~ "Iraq",
+      adm0_pcode == "LBY" ~ "Libya",
+      adm0_pcode == "NGA" ~ "Nigeria",
+      adm0_pcode == "PSE" ~ "oPt",
+      adm0_pcode == "SDN" ~ "Sudan"
+    )
+  ) %>%
   group_by(adm0_pcode) %>%
   mutate(
     percent_diff = (pin - pin[sector_group == "intersectoral"])
@@ -39,7 +49,7 @@ df_pins <- read.csv(
 ##################
 
 ggplot(df_pins, aes(
-  fill = fct_rev(sector_group), y = pin, x = adm0_pcode,
+  fill = fct_rev(sector_group), y = pin, x = adm0_en,
   label = ifelse(percent_diff == 0, "",
     paste0(round(percent_diff, digits = 0), "%")
   )
@@ -63,7 +73,7 @@ df_pins %>%
   filter(sector_group == "HPC 2023") %>%
   ggplot(
     aes(
-      y = fct_reorder(adm0_pcode, percent_diff),
+      y = fct_reorder(adm0_en, percent_diff),
       x = percent_diff,
       fill = number_disagg
     )
