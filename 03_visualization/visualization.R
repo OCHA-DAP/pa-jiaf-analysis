@@ -6,6 +6,10 @@ library("scales")
 jiaf_dir <- Sys.getenv("JIAF_DATA_DIR")
 save_path <- file.path(jiaf_dir, "Data analyzed")
 
+###################
+#### WRANGLING ####
+###################
+
 # Plot the PINs
 df_pins <- read.csv(
   file.path(
@@ -26,6 +30,10 @@ df_pins <- read.csv(
       sector_group == "sectoral_cluster" ~ "Cluster totals"
     ),
   )
+
+##################
+#### PLOTTING ####
+##################
 
 ggplot(df_pins, aes(
   fill = sector_group, y = pin, x = adm0_pcode,
@@ -105,9 +113,22 @@ df_pins %>%
     fill = "Number of\ndisaggregations"
   ) +
   geom_text(
-    y = "COL",
+    y = "COL 2+",
     x = 30,
-    label = "Colombia PiN difference due\nto incorporation of severity.",
+    label = paste0(
+      "Colombia PiN calculated for all sectors\n",
+      "with severity 2 and above."
+    ),
+    size = 3,
+    check_overlap = TRUE
+  ) +
+  geom_text(
+    y = "COL 3+",
+    x = 30,
+    label = paste0(
+      "Colombia PiN calculated for all sectors\n",
+      "with severity 3 and above."
+    ),
     size = 3,
     check_overlap = TRUE
   ) +

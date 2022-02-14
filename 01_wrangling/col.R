@@ -164,7 +164,7 @@ df_ocha <- df_ocha_raw %>%
       0
     ),
     pin_2_plus = ifelse(
-      severidad >= 3,
+      severidad >= 2,
       pin,
       0
     )
@@ -311,10 +311,14 @@ df_col <- df_col %>%
     starts_with("pin"),
     names_to = "pin_type",
     values_to = "pin",
-    names_prefix = "pin"
+    names_prefix = "pin_"
   ) %>%
   mutate(
-    sector = paste0(sector, pin_type)
+    adm0_pcode = ifelse(
+      pin_type == "2_plus",
+      paste("COL", "2+"),
+      paste("COL", "3+")
+    )
   ) %>%
   select(-pin_type)
 
