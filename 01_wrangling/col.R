@@ -296,8 +296,17 @@ df_col <- right_join(
 
 # Create long format PiN data with
 # 2+ and 3+ severity methods
-# included
+# included, just make sure the
+# reported intersectoral is always
+# the same
 df_col <- df_col %>%
+  mutate(
+    pin_2_plus = ifelse(
+      sector == "intersectorial",
+      pin_3_plus,
+      pin_2_plus
+    )
+  ) %>%
   pivot_longer(
     starts_with("pin"),
     names_to = "pin_type",
