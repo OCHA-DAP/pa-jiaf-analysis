@@ -1,6 +1,5 @@
 library("ggplot2")
 library("tidyverse")
-library("scales")
 
 # TODO: refactor filepaths to helpers
 jiaf_dir <- Sys.getenv("JIAF_DATA_DIR")
