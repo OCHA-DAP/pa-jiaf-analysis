@@ -34,13 +34,15 @@ ggplot(df_pins, aes(
   )
 )) +
   geom_bar(position = "dodge", stat = "identity") +
-  geom_text(vjust = -0.5, position = position_dodge(width = 1), size = 3) +
+  theme(text = element_text(size = 7)) +
+  geom_text(vjust = -0.5, position = position_dodge(width = 1), size = 1) +
   labs(
     fill = "Group",
     x = "Country ISO3",
     y = "PIN"
   ) +
-  scale_y_continuous(label = comma)
+  scale_y_continuous(label = comma) +
+  theme_minimal()
 
 ggsave(file.path(save_path, "2022_hno_pin_totals.png"))
 
@@ -66,12 +68,15 @@ ggplot(
     position = "dodge", stat = "identity", show.legend = FALSE,
     fill = "#FF6666"
   ) +
+  theme(text = element_text(size = 4)) +
   coord_flip() +
   facet_grid(adm0_pcode ~ ., scales = "free", space = "free") +
+  theme(axis.text.y = element_text(size = 2)) +
   labs(
     x = "sector",
     y = "% contribution to intersectoral PIN"
-  )
+  ) +
+  theme_minimal()
 
 ggsave(file.path(save_path, "2022_hno_pin_contributions.png"))
 
@@ -86,7 +91,9 @@ df_pins %>%
     )
   ) +
   geom_bar(stat = "identity") +
+  theme_minimal() +
   scale_fill_gradient(
+    breaks = c(0, 1, 2, 3),
     low = "#F6BDC0",
     high = "#EA4C46"
   ) +
@@ -101,6 +108,20 @@ df_pins %>%
     y = "COL",
     x = 30,
     label = "Colombia PiN difference due\nto incorporation of severity.",
+    size = 3,
+    check_overlap = TRUE
+  ) +
+  geom_text(
+    y = "IRQ",
+    x = 30,
+    label = "Reported PiN for each admin\narea is higher than sector max.",
+    size = 3,
+    check_overlap = TRUE
+  ) +
+  geom_text(
+    y = "NGA",
+    x = 30,
+    label = "Reported PiN for each admin\narea is higher than sector max.",
     size = 3,
     check_overlap = TRUE
   )
