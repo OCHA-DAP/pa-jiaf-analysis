@@ -158,7 +158,12 @@ df_ocha <- df_ocha_raw %>%
     source = "ocha",
     sector,
     adm2_file_code = codigo_divipola,
-    pin = ifelse(
+    pin_3_plus = ifelse(
+      severidad >= 3,
+      pin,
+      0
+    ),
+    pin_2_plus = ifelse(
       severidad >= 3,
       pin,
       0
@@ -251,11 +256,18 @@ df_clusters <- bind_rows(
   df_wash,
   df_health
 ) %>%
-  mutate(pin = ifelse(
-    sev >= 3,
-    pin,
-    0
-  ))
+  mutate(
+    pin_3_plus = ifelse(
+      sev >= 3,
+      pin,
+      0
+    ),
+    pin_2_plus = ifelse(
+      sev >= 2,
+      pin,
+      0
+    )
+  )
 
 
 ############################
@@ -278,9 +290,24 @@ df_col <- right_join(
       "intersectoral",
       "sectoral"
     ),
-    pin = replace_na(pin, 0)
+    across(starts_with("pin"), replace_na, 0)
   ) %>%
-  select(-adm2_file_code)
+  select(-c(adm2_file_code, sev, pin))
+
+# Create long format PiN data with
+# 2+ and 3+ severity methods
+# included
+df_col <- df_col %>%
+  pivot_longer(
+    starts_with("pin"),
+    names_to = "pin_type",
+    values_to = "pin",
+    names_prefix = "pin"
+  ) %>%
+  mutate(
+    sector = paste0(sector, pin_type)
+  ) %>%
+  select(-pin_type)
 
 write_csv(
   df_col,
