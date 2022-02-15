@@ -29,7 +29,13 @@ df_pins <- read.csv(
       adm0_pcode == "NGA" ~ "Nigeria",
       adm0_pcode == "PSE" ~ "oPt",
       adm0_pcode == "SDN" ~ "Sudan"
-    )
+    ),
+    scenario = case_when(
+      adm0_pcode == "IRQ" ~ "A",
+      adm0_pcode == "NGA" ~ "A",
+      adm0_pcode == "PSE" ~ "A",
+      TRUE ~ "B"
+    ),
   ) %>%
   group_by(adm0_pcode) %>%
   mutate(
@@ -75,21 +81,17 @@ df_pins %>%
     aes(
       y = fct_reorder(adm0_en, percent_diff),
       x = percent_diff,
-      fill = number_disagg
+      fill = scenario
     )
   ) +
   geom_bar(stat = "identity") +
   theme_light() +
-  scale_fill_gradient(
-    low = "#F6BDC0",
-    high = "#EA4C46"
-  ) +
   labs(
     x = "% difference",
     y = "Country",
     title = "% difference, 2023 HPC and JIAF 1.1",
     subtitle = "Intersectoral PiN calculations",
-    fill = "Number of\ndisaggregations"
+    fill = "Scenario"
   )
 
 ggsave(file.path(save_path, "m-twg_2022_hno_pct_difference.png"),
