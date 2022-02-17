@@ -19,11 +19,10 @@ df_pins <- read.csv(
 ) %>%
   filter(
     sector_group != "sectoral_cluster",
-    adm0_pcode != "COL 2+"
   ) %>%
   mutate(
     adm0_en = case_when(
-      adm0_pcode == "COL 3+" ~ "Colombia",
+      adm0_pcode == "COL" ~ "Colombia",
       adm0_pcode == "IRQ" ~ "Iraq",
       adm0_pcode == "LBY" ~ "Libya",
       adm0_pcode == "NGA" ~ "Nigeria",
@@ -48,6 +47,7 @@ df_pins <- read.csv(
       sector_group == "intersectoral" ~ "JIAF 1.1",
       sector_group == "sectoral" ~ "HPC 2023",
     ),
+    change_direction = ifelse(percent_diff > 0, "increase", "decrease")
   )
 
 ##################
@@ -63,12 +63,13 @@ ggplot(df_pins, aes(
   geom_bar(position = "dodge", stat = "identity") +
   geom_text(vjust = -0.5, position = position_dodge(width = 1), size = 3) +
   labs(
-    fill = "Group",
-    x = "Country ISO3",
+    fill = "Methodology",
+    x = "Country",
     y = "PIN"
   ) +
   scale_y_continuous(label = comma) +
-  theme_light()
+  theme_light() +
+  scale_fill_manual(values = c("#009988", "#EE7733"))
 
 ggsave(file.path(save_path, "m-twg_2022_hno_pin_totals.png"),
   width = 7, height = 7
@@ -81,7 +82,7 @@ df_pins %>%
     aes(
       y = fct_reorder(adm0_en, percent_diff),
       x = percent_diff,
-      fill = scenario
+      fill = change_direction
     )
   ) +
   geom_bar(stat = "identity") +
@@ -91,7 +92,7 @@ df_pins %>%
     y = "Country",
     title = "% difference, 2023 HPC and JIAF 1.1",
     subtitle = "Intersectoral PiN calculations",
-    fill = "Scenario"
+    fill = "Change\nw.r.t.\nJIAF 1.1"
   )
 
 ggsave(file.path(save_path, "m-twg_2022_hno_pct_difference.png"),
