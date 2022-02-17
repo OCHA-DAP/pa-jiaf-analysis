@@ -158,15 +158,10 @@ df_ocha <- df_ocha_raw %>%
     source = "ocha",
     sector,
     adm2_file_code = codigo_divipola,
-    pin_3_plus = ifelse(
-      severidad >= 3,
-      pin,
-      0
-    ),
-    pin_2_plus = ifelse(
-      severidad >= 2,
-      pin,
-      0
+    pin = ifelse(
+      severidad < 3 & sector == "intersectorial",
+      0,
+      pin
     )
   )
 
@@ -255,20 +250,7 @@ df_clusters <- bind_rows(
   df_minas,
   df_wash,
   df_health
-) %>%
-  mutate(
-    pin_3_plus = ifelse(
-      sev >= 3,
-      pin,
-      0
-    ),
-    pin_2_plus = ifelse(
-      sev >= 2,
-      pin,
-      0
-    )
-  )
-
+)
 
 ############################
 #### GENERATE FULL DATA ####
@@ -292,35 +274,7 @@ df_col <- right_join(
     ),
     across(starts_with("pin"), replace_na, 0)
   ) %>%
-  select(-c(adm2_file_code, sev, pin))
-
-# Create long format PiN data with
-# 2+ and 3+ severity methods
-# included, just make sure the
-# reported intersectoral is always
-# the same
-df_col <- df_col %>%
-  mutate(
-    pin_2_plus = ifelse(
-      sector == "intersectorial",
-      pin_3_plus,
-      pin_2_plus
-    )
-  ) %>%
-  pivot_longer(
-    starts_with("pin"),
-    names_to = "pin_type",
-    values_to = "pin",
-    names_prefix = "pin_"
-  ) %>%
-  mutate(
-    adm0_pcode = ifelse(
-      pin_type == "2_plus",
-      paste("COL", "2+"),
-      paste("COL", "3+")
-    )
-  ) %>%
-  select(-pin_type)
+  select(-c(adm2_file_code, sev))
 
 write_csv(
   df_col,
