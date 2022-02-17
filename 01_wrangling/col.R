@@ -252,6 +252,7 @@ df_clusters <- bind_rows(
   df_health
 )
 
+
 ############################
 #### GENERATE FULL DATA ####
 ############################
