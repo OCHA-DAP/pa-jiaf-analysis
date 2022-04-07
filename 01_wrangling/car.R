@@ -41,7 +41,7 @@ df_ocha_pcodes <- read_excel(
 
 df_ocha <- df_ocha_raw %>%
   transmute(
-    adm0_en = "CAR",
+    adm0_en = "Central African Republic",
     adm0_pcode = "CAR",
     adm1_en = prefecture,
     adm1_pcode = df_ocha_pcodes$pcode_pref_2[match(prefecture, df_ocha_pcodes$prefecture_1)],
@@ -57,7 +57,7 @@ df_ocha <- df_ocha_raw %>%
 
 write_csv(
   df_ocha,
-  file_paths$save_path
+  paste0(jiaf_dir, "/Data aggregated for analysis/car_pins_2022.csv")
 )
 
 
