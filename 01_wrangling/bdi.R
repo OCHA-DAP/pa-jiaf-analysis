@@ -28,6 +28,14 @@ df_ocha_raw <- read_excel(
   clean_names() %>%
   drop_na(x1)
 
+df_ocha_refugees <- read_excel(
+  ocha_fp,
+  skip = 2,
+  sheet = "BASELINE REFUGIES SADD"
+) %>%
+  clean_names() %>%
+  drop_na(province_43)
+
 df_ocha_pcode_extract <- read_excel(
   ocha_fp,
   sheet = "Step 5-Severity"
@@ -55,8 +63,26 @@ df_cleaned <- df_ocha_raw %>%
     sector_general = ifelse(sector == "intersectoral", "intersectoral", "sectoral")
   )
 
-write_csv(
+df_refugees_cleaned <- df_ocha_refugees %>%
+  transmute(
+    adm0_en = "Burundi",
+    adm0_pcode = "BDI",
+    adm1_en = province_43,
+    adm1_pcode = df_ocha_pcode_extract$adm1_pcode[match(province_43, df_ocha_pcode_extract$adm1_state)],
+    population_group = "refugees",
+    sector = "refugees",
+    pin = total_64,
+    source = "ocha",
+    sector_general = "sectoral"
+  )
+
+df_all <- rbind(
   df_cleaned,
+  df_refugees_cleaned
+  )
+
+write_csv(
+  df_all,
   file_paths$save_path
 )
 
