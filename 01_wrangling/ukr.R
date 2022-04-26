@@ -125,6 +125,84 @@ df_prot_raw <- read_excel(
     pin = x13
   )
 
+#shelter cluster indicators
+df_shelter_raw_1 <- read_excel(
+  file.path(
+    file_paths$ocha_dir,
+    "JIAF_data_UKR_sharing/Cluster data/2022_JIAF_UKR_Shelter.xlsx"
+  ),
+  range = "B2:H18",
+  sheet = "Indicator_Severity_1"
+) %>%
+  clean_names() %>%
+  mutate(
+    pin1 = sum_row(
+      (x3_severe * population_baseline) + 
+      (x4_extreme * population_baseline) +
+      (x5_catastrophic * population_baseline)
+    )
+  )
+
+df_shelter_raw_2 <- read_excel(
+  file.path(
+    file_paths$ocha_dir,
+    "JIAF_data_UKR_sharing/Cluster data/2022_JIAF_UKR_Shelter.xlsx"
+  ),
+  range = "B34:H50",
+  sheet = "Indicator_Severity_1"
+) %>%
+  clean_names() %>%
+  mutate(
+    pin2 = sum_row(
+      (x3_severe * population_baseline) + 
+        (x4_extreme * population_baseline) +
+        (x5_catastrophic * population_baseline)
+    )
+  )
+
+df_shelter <- left_join(df_shelter_raw_1, df_shelter_raw_2, by = "key_unit") %>%
+  transmute(
+    sector = "shelter",
+    key_unit,
+    population_group = "residents",
+    pin = max_row(pin1, pin2, na.rm = T)
+  )
+
+#wash cluster data
+df_wash_residents <- read_excel(
+  file.path(
+    file_paths$ocha_dir,
+    "JIAF_data_UKR_sharing/Cluster data/2022_JIAF_UKR_WASH.xlsx"
+  ),
+  range = "A4:P20",
+  sheet = "WASH"
+) %>%
+  clean_names() %>%
+  transmute(
+    sector = "wash",
+    key_unit = key,
+    population_group = "residents",
+    pin = by_area
+  )
+
+df_wash_idps <- read_excel(
+  file.path(
+    file_paths$ocha_dir,
+    "JIAF_data_UKR_sharing/Cluster data/2022_JIAF_UKR_WASH.xlsx"
+  ),
+  range = "A28:P38",
+  sheet = "WASH"
+) %>%
+  clean_names() %>%
+  transmute(
+    sector = "wash",
+    key_unit = replace_na(key, "Other"),
+    population_group = "IDPs",
+    pin = by_area
+  )
+
+df_wash <- rbind(df_wash_residents, df_wash_idps)
+
 ########################
 #### DATA WRANGLING ####
 ########################
@@ -135,7 +213,9 @@ df_all <- rbind(
   df_edu_raw,
   df_fslc_raw,
   df_health_raw,
-  df_prot_raw
+  df_prot_raw,
+  df_shelter,
+  df_wash
 ) %>%
   transmute(
     adm0_name = "Ukraine",
