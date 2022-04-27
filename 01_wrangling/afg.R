@@ -102,7 +102,8 @@ df_total <- df_combined_all %>%
     pin = number_inneed,
     source,
     sectoral_general
-  )
+  ) %>%
+  separate(age_gender_group, into = c("age", "sex"))
 
 write_csv(
   df_total,
