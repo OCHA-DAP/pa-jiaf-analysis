@@ -88,7 +88,7 @@ df_total <- df_combined_all %>%
     adm0_pcode = "AFG",
     adm0_en = "Afghanistan",
     source = "ocha",
-    sectoral_general = ifelse(sector == "intersectoral", "intersectoral", "sectoral")
+    sector_general = ifelse(sector == "intersectoral", "intersectoral", "sectoral")
   ) %>%
   filter(!grepl("total", group)) %>%
   select(
@@ -101,7 +101,7 @@ df_total <- df_combined_all %>%
     sector,
     pin = number_inneed,
     source,
-    sectoral_general
+    sector_general
   ) %>%
   separate(age_gender_group, into = c("age", "sex"))
 
