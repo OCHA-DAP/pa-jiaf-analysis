@@ -31,6 +31,9 @@ df_ocha_raw <- read_excel(
 ########################
 
 df_cleaned <- df_ocha_raw %>%
+  filter(
+    !is.na(adm1_state)
+  ) %>%
   pivot_longer(
     cols = c(matches("^pi_n_|final_pi_n_hpc2022")),
     names_to = "sector",
