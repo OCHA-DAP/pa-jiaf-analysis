@@ -34,7 +34,8 @@ df_cleaned <- df_ocha_raw %>%
   pivot_longer(
     cols = c(matches("^pi_n_|final_pi_n_hpc2022")),
     names_to = "sector",
-    values_to = "pin") %>%
+    values_to = "pin"
+  ) %>%
   transmute(
     adm0_name = "Chad",
     adm0_pcode = "TCD",
@@ -42,10 +43,18 @@ df_cleaned <- df_ocha_raw %>%
     adm1_pcode,
     adm2_name = adm2_county,
     adm2_pcode,
-    sector = ifelse(sector == "final_pi_n_hpc2022", "intersectoral", gsub("^pi_n_","",sector)),
+    sector = ifelse(
+      sector == "final_pi_n_hpc2022",
+      "intersectoral",
+      gsub("^pi_n_", "", sector)
+    ),
     pin = replace_na(pin, 0),
     source = "ocha",
-    sector_general = ifelse(sector == "intersectoral", "intersectoral", "sectoral")
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
   )
 
 write_csv(

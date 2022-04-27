@@ -82,7 +82,11 @@ df_cluster_wash <- read_excel(
     adm1_name = departement,
     adm1_pcode = pcode_dep,
     adm2_name = commune,
-    adm2_pcode = ifelse(is.na(pcode_com), df_ocha$adm2_pcode[match(adm2_name, df_ocha$adm2_name)], pcode_com),
+    adm2_pcode = ifelse(
+      is.na(pcode_com),
+      df_ocha$adm2_pcode[match(adm2_name, df_ocha$adm2_name)],
+      pcode_com
+    ),
     sector = "wash",
     pin = as.numeric(x53),
     score = as.numeric(x56),
@@ -104,10 +108,19 @@ df_cluster_nutrition <- read_excel(
   transmute(
     adm0_name = "Haiti",
     adm0_pcode = "HTI",
-    adm1_name = df_ocha$adm1_name[match(admin_2_pour_les_zones_dinteret_affectees, df_ocha$adm2_name)],
-    adm1_pcode = df_ocha$adm1_pcode[match(admin_2_pour_les_zones_dinteret_affectees, df_ocha$adm2_name)],
+    adm1_name = df_ocha$adm1_name[match(
+      admin_2_pour_les_zones_dinteret_affectees,
+      df_ocha$adm2_name
+    )],
+    adm1_pcode = df_ocha$adm1_pcode[match(
+      admin_2_pour_les_zones_dinteret_affectees,
+      df_ocha$adm2_name
+    )],
     adm2_name = admin_2_pour_les_zones_dinteret_affectees,
-    adm2_pcode = df_ocha$adm2_pcode[match(admin_2_pour_les_zones_dinteret_affectees, df_ocha$adm2_name)],
+    adm2_pcode = df_ocha$adm2_pcode[match(
+      admin_2_pour_les_zones_dinteret_affectees,
+      df_ocha$adm2_name
+    )],
     sector = "nutrition",
     pin = as.numeric(pi_n_2022_13),
     score = as.numeric(severite_2022),
@@ -208,7 +221,11 @@ df_cluster_health <- read_excel(
     adm2_pcode = com_p_code,
     sector = "health",
     pin = as.numeric(pin),
-    score = ifelse(pin == 0, 0, as.numeric(ronde_utiliser_pour_repartition_du_pin_entre_niveaux)),
+    score = ifelse(
+      pin == 0,
+      0,
+      as.numeric(ronde_utiliser_pour_repartition_du_pin_entre_niveaux)
+    ),
     source = "ocha",
     sector_general = "sectoral"
   )
@@ -220,7 +237,7 @@ df_cluster_health <- read_excel(
 #### Cluster PROVIDED DATA ####
 ############################
 
-#education
+# education
 df_cluster_edu <- read_excel(
   file.path(
     file_paths$cluster_dir,
@@ -263,3 +280,4 @@ write_csv(
   df_all,
   file_paths$save_path
 )
+c

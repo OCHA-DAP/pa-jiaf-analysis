@@ -43,10 +43,11 @@ df_severity <- df_ocha_raw %>%
     names_to = "sector",
     values_to = "score"
   ) %>%
-  select(number_adm2_name,
-         sector,
-         score
-         ) %>%
+  select(
+    number_adm2_name,
+    sector,
+    score
+  ) %>%
   mutate(
     sector = gsub("number_inneed_|_severity|_[0-9]+", "", sector)
   )
@@ -61,12 +62,12 @@ df_pin <- df_ocha_raw %>%
     cols = !matches("severity|adm"),
     names_to = "sector",
     values_to = "pin"
-  )  %>%
+  ) %>%
   select(
     number_adm2_name,
     sector,
     pin
-    ) %>%
+  ) %>%
   mutate(
     sector = gsub("number_inneed_|_severity|_[0-9]+", "", sector),
     population_group = case_when(
@@ -75,15 +76,16 @@ df_pin <- df_ocha_raw %>%
       grepl("displaced", sector) ~ "displaced",
       grepl("returnees", sector) ~ "returnees",
       grepl("refugees", sector) ~ "refugees"
-      ),
+    ),
     sector = str_replace(sector, paste0("_", population_group), "")
   )
 
-df_all <- 
+df_all <-
   left_join(
-    df_pin, 
-    df_severity, 
-    by = c("number_adm2_name", "sector")) %>%
+    df_pin,
+    df_severity,
+    by = c("number_adm2_name", "sector")
+  ) %>%
   transmute(
     adm0_name = "Somalia",
     adm0_pcode = "SOM",
@@ -93,7 +95,11 @@ df_all <-
     pin = round(pin),
     score,
     source = "ocha",
-    sector_general = ifelse(sector == "intersectoral", "intersectoral", "sectoral")
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
   )
 
 write_csv(

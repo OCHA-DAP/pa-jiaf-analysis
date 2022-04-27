@@ -26,7 +26,8 @@ ocha_fp <- file.path(
 df_ocha_raw <- read_excel(
   ocha_fp,
   range = "AM2:AW186",
-  sheet = "Analyse") %>%
+  sheet = "Analyse"
+) %>%
   clean_names() %>%
   transmute(
     prefecture,
@@ -39,10 +40,11 @@ df_ocha_raw <- read_excel(
 # reading a sheet to extract pcodes
 df_ocha_pcodes <- read_excel(
   ocha_fp,
-  sheet = "Pop_SPref2022HorsRef") %>%
+  sheet = "Pop_SPref2022HorsRef"
+) %>%
   clean_names()
 
-#CCCM/NFI/Shelter data
+# CCCM/NFI/Shelter data
 df_cccm <- read_excel(
   file.path(
     file_paths$ocha_dir,
@@ -58,16 +60,16 @@ df_cccm <- read_excel(
     pop_groupe,
     pin = pin_expert_2022,
     sector = "cccm/nfi/shelter"
-    
   )
 
-#Education cluster data
+# Education cluster data
 df_education <- read_excel(
   file.path(
     file_paths$ocha_dir,
     "CAR_HNO_2022_Education.xlsx"
   ),
-  sheet = "Final_pop_numbers_vFINAL_OCHA") %>%
+  sheet = "Final_pop_numbers_vFINAL_OCHA"
+) %>%
   clean_names() %>%
   filter(!is.na(pcode_pref)) %>%
   transmute(
@@ -80,7 +82,7 @@ df_education <- read_excel(
     sector = "education"
   )
 
-#Food Security cluster data
+# Food Security cluster data
 df_fs <- read_excel(
   file.path(
     file_paths$ocha_dir,
@@ -99,7 +101,7 @@ df_fs <- read_excel(
     sector = "food security"
   )
 
-#Nutrition cluster data
+# Nutrition cluster data
 df_nutr <- read_excel(
   file.path(
     file_paths$ocha_dir,
@@ -118,7 +120,7 @@ df_nutr <- read_excel(
   )
 
 
-#CP cluster data
+# CP cluster data
 df_cp <- read_excel(
   file.path(
     file_paths$ocha_dir,
@@ -136,7 +138,7 @@ df_cp <- read_excel(
     sector = "cp"
   )
 
-#Protection cluster data
+# Protection cluster data
 df_prot <- read_excel(
   file.path(
     file_paths$ocha_dir,
@@ -154,7 +156,7 @@ df_prot <- read_excel(
     sector = "protection"
   )
 
-#Health cluster data
+# Health cluster data
 df_health <- read_excel(
   file.path(
     file_paths$ocha_dir,
@@ -172,7 +174,7 @@ df_health <- read_excel(
     sector = "health"
   )
 
-#Protection GBV cluster data
+# Protection GBV cluster data
 df_gbv <- read_excel(
   file.path(
     file_paths$ocha_dir,
@@ -189,7 +191,7 @@ df_gbv <- read_excel(
     sector = "protection_gbv"
   )
 
-#WASH cluster data
+# WASH cluster data
 df_health <- read_excel(
   file.path(
     file_paths$ocha_dir,
@@ -212,33 +214,43 @@ df_health <- read_excel(
 #### DATA WRANGLING ####
 ########################
 
-df_ocha <- 
-  bind_rows(df_ocha_raw,
-        df_fs,
-        df_gbv,
-        df_prot,
-        df_cp,
-        df_nutr,
-        df_health,
-        df_education,
-        df_prot
-        ) %>%
+df_ocha <-
+  bind_rows(
+    df_ocha_raw,
+    df_fs,
+    df_gbv,
+    df_prot,
+    df_cp,
+    df_nutr,
+    df_health,
+    df_education,
+    df_prot
+  ) %>%
   transmute(
     adm0_name = "Central African Republic",
     adm0_pcode = "CAR",
-    adm1_name = df_education$prefecture[match(sous_prefecture, df_education$sous_prefecture)],
+    adm1_name = df_education$prefecture[match(
+      sous_prefecture,
+      df_education$sous_prefecture
+    )],
     adm1_pcode = ifelse(sous_prefecture == "Bangui", "Bangui", adm1_name),
-    adm1_pcode = df_education$pcode_pref[match(sous_prefecture, df_education$sous_prefecture)],
+    adm1_pcode = df_education$pcode_pref[match(
+      sous_prefecture,
+      df_education$sous_prefecture
+    )],
     adm1_pcode = ifelse(sous_prefecture == "Bangui", "CF71", adm1_pcode),
     adm2_name = sous_prefecture,
-    adm2_pcode = df_education$pcode_sous_pref[match(sous_prefecture, df_education$sous_prefecture)],
+    adm2_pcode = df_education$pcode_sous_pref[match(
+      sous_prefecture,
+      df_education$sous_prefecture
+    )],
     adm2_pcode = ifelse(sous_prefecture == "Bangui", "CF711", adm2_pcode),
     sector = "intersectoral",
     population_group = pop_groupe,
     pin = round(pin),
     source = "ocha",
     sector_general = "intersectoral"
-    )
+  )
 
 write_csv(
   df_ocha,
