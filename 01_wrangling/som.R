@@ -28,6 +28,19 @@ df_ocha_raw <- read_excel(
   remove_empty("cols") %>%
   clean_names()
 
+df_pcodes <- read_excel(
+  file.path(
+    file_paths$ocha_dir,
+    "som-administrative-division-names-and-p-codes.xlsx"
+  ),
+  sheet = "Admin2"
+) %>%
+  select(
+    adm1_pcode = admin1Pcode,
+    adm1_name = admin1Name_en,
+    adm2_pcode = admin2Pcode,
+    adm2_name = admin2Name_en,
+  )
 
 ########################
 #### DATA WRANGLING ####
@@ -89,7 +102,19 @@ df_all <-
   transmute(
     adm0_name = "Somalia",
     adm0_pcode = "SOM",
-    adm2_name = number_adm2_name,
+    adm2_name = str_replace(
+      number_adm2_name,
+      "_",
+      " "
+    ),
+    adm2_name = case_when( # since no pcodes, have to match CODAB file
+      adm2_name == "Kismayo" ~ "Kismaayo",
+      adm2_name == "Garowe" ~ "Garoowe",
+      adm2_name == "Bandarbayla" ~ "Bandarbeyla",
+      adm2_name == "Baidoa" ~ "Baydhaba",
+      adm2_name == "Xardheere" ~ "Xarardheere",
+      TRUE ~ adm2_name
+    ),
     population_group,
     sector,
     pin = round(pin),
@@ -100,6 +125,14 @@ df_all <-
       "intersectoral",
       "sectoral"
     )
+  ) %>%
+  left_join(
+    df_pcodes,
+    by = c("adm2_name")
+  ) %>%
+  relocate(
+    adm1_pcode:adm2_pcode,
+    .before = adm2_name
   )
 
 write_csv(
