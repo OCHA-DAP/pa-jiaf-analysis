@@ -62,6 +62,7 @@ df_ocha <- df_ocha_raw %>%
     adm0_name = "Cameroon",
     adm0_pcode = "CMR",
     adm1_name = region,
+    adm1_pcode = substr(adm2_pcode, 1, 6),
     adm2_name = division,
     adm2_pcode,
     sector = ifelse(
