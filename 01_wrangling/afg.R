@@ -119,7 +119,10 @@ df_total <- df_combined_all %>%
       "sectoral"
     )
   ) %>%
-  filter(!grepl("total", group)) %>%
+  filter(
+    !grepl("total", group),
+    number_admin1_name != "Total"
+  ) %>%
   select(
     adm0_pcode,
     adm0_name,
