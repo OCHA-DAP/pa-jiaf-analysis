@@ -77,9 +77,11 @@ df_combined_all <- left_join(
            "admin3pcode")
   ) %>%
   filter(df_ocha_pin$final_est_of_total_pop_aug_2021 != 0) %>%
-  mutate_at(
-    vars(matches("_pin|_severity")),
-    as.numeric
+  mutate(
+    across(
+      matches("_pin|_severity"),
+      as.numeric
+    )
   )
 
 # pivoting the pins

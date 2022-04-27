@@ -67,15 +67,15 @@ df_ocha <- df_ocha_raw %>%
     sex = sexe,
     age,
     population_group = gsub("n_", "", population_group),
-    pin = replace_na(value, 0),
+    pin = value,
     source = "ocha",
     sector_general = ifelse(sector == "intersectoral", "intersectoral", "sectoral")
+  ) %>%
+  filter(
+    !is.na(pin)
   )
 
 write_csv(
   df_ocha,
   file_paths$save_path
 )
-
-
-

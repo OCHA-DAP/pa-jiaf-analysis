@@ -9,7 +9,7 @@ source(here::here("99_helpers", "helpers.R"))
 #### DATA DIRS ####
 ###################
 
-file_paths <- get_paths("CAR")
+file_paths <- get_paths("CAR", "Central African Republic")
 
 ############################
 #### OCHA PROVIDED DATA ####
@@ -244,6 +244,3 @@ write_csv(
   df_ocha,
   gsub("NA_pin", "car_pin", file_paths$save_path)
 )
-
-
-

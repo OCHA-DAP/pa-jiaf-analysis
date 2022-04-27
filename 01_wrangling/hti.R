@@ -151,12 +151,12 @@ df_cluster_mig <- read.csv(
   transmute(
     adm0_name = "Haiti",
     adm0_pcode = "HTI",
-    adm1_name = department,
+    adm1_name = departement,
     adm1_pcode = pcode_dep,
     adm2_name = commune,
     adm2_pcode = pcode_com,
     sector = "migrants",
-    pin = replace_na(as.numeric(pin), 0),
+    pin = parse_number(pin),
     score = ifelse(pin == 0, 0, as.numeric(severite)),
     source = "ocha",
     sector_general = "sectoral"
@@ -263,6 +263,3 @@ write_csv(
   df_all,
   file_paths$save_path
 )
-
-
-
