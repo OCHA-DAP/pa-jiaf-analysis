@@ -280,4 +280,3 @@ write_csv(
   df_all,
   file_paths$save_path
 )
-c
