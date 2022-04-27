@@ -27,6 +27,18 @@ df_ocha_clusters_raw <- read_excel(
 
 df_ocha_is_raw <- read_excel(ocha_fp, sheet = "Intersectoral PiN 2022")
 
+df_adm1 <- read_excel(
+  file.path(
+    file_paths$ocha_dir,
+    "lby_adminboundaries_tabulardata.xlsx"
+  ),
+  sheet = "Admin1"
+) %>%
+  select(
+    adm1_pcode = admin1Pcode,
+    adm1_name = admin1Name_en
+  )
+
 ########################
 #### DATA WRANGLING ####
 ########################
@@ -122,6 +134,14 @@ df_lby <- bind_rows(
   rename_at(
     vars(ends_with("_en")),
     ~ str_replace(.x, "_en", "_name")
+  ) %>%
+  left_join(
+    df_adm1,
+    by = c("adm1_pcode")
+  ) %>%
+  relocate(
+    adm1_name,
+    .before = adm2_pcode
   )
 
 write_csv(
