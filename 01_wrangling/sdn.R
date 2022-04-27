@@ -160,7 +160,11 @@ df_sdn <- bind_rows(
     sector == "intersectoral",
     "intersectoral",
     "sectoral"
-  ))
+  )) %>%
+  rename_at(
+    vars(ends_with("_en")),
+    ~ str_replace(.x, "_en", "_name")
+  )
 
 write_csv(
   df_sdn,

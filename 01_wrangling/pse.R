@@ -225,6 +225,10 @@ df_pse <- bind_rows(
       "intersectoral",
       "sectoral"
     )
+  ) %>%
+  rename_at(
+    vars(ends_with("_en")),
+    ~ str_replace(.x, "_en", "_name")
   )
 
 write_csv(

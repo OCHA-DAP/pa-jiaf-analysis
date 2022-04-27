@@ -42,10 +42,11 @@ df_ocha_raw <- map_dfr(
     skip = ifelse(.x == "Health", 3, 5),
     sheet = .x
   ) %>%
-    clean_names()  %>%
+    clean_names() %>%
     drop_na(region) %>%
     mutate(sector = .x)
-) %>% bind_rows()
+) %>%
+  bind_rows()
 
 
 ########################
@@ -58,18 +59,26 @@ df_ocha <- df_ocha_raw %>%
     names_to = "population_group"
   ) %>%
   transmute(
-    adm0_en = "Cameroon",
+    adm0_name = "Cameroon",
     adm0_pcode = "CMR",
-    adm1_en = region,
-    adm2_en = division,
+    adm1_name = region,
+    adm2_name = division,
     adm2_pcode,
-    sector = ifelse(sector == "population PIN & Targets 2022", "intersectoral", sector),
+    sector = ifelse(
+      sector == "population PIN & Targets 2022",
+      "intersectoral",
+      sector
+    ),
     sex = sexe,
     age,
     population_group = gsub("n_", "", population_group),
     pin = value,
     source = "ocha",
-    sector_general = ifelse(sector == "intersectoral", "intersectoral", "sectoral")
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
   ) %>%
   filter(
     !is.na(pin)

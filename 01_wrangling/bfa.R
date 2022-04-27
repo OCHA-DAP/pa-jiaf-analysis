@@ -23,7 +23,7 @@ ocha_fp <- file.path(
 df_ocha_raw <- read_excel(
   ocha_fp,
   sheet = "Cible"
-  ) %>%
+) %>%
   clean_names() %>%
   drop_na(x1)
 
@@ -42,7 +42,7 @@ df_ocha <- df_ocha_raw %>%
     all_of(col_indexes)
   )
 
-names(df_ocha) <- df_ocha[1,]
+names(df_ocha) <- df_ocha[1, ]
 
 ########################
 #### DATA WRANGLING ####
@@ -54,31 +54,37 @@ df_cleaned <- df_ocha %>%
   select(!c(matches("_total|pe$"))) %>%
   pivot_longer(
     cols = matches("^refugies|^pi_n_pdi|^pi_n_non_pdi"),
-    names_to = "population_group") %>%
+    names_to = "population_group"
+  ) %>%
   mutate(
     sector = gsub("^refugies|^pi_n_pdi|^pi_n_non_pdi", "", population_group)
-    ) %>%
+  ) %>%
   transmute(
-    adm0_en = "Burkina Faso",
+    adm0_name = "Burkina Faso",
     adm0_pcode = "BFA",
-    adm1_en = adm1_state,
+    adm1_name = adm1_state,
     adm1_pcode,
-    adm2_en = adm2_county,
+    adm2_name = adm2_county,
     adm2_pcode,
-    adm3_en = adm3_county,
+    adm3_name = adm3_county,
     adm3_pcode,
-    population_group = case_when(grepl("pi_n_pdi", population_group) ~ "pdi",
-                                 grepl("pi_n_non_pdi", population_group) ~ "non_pdi",
-                                 T ~ population_group),
+    population_group = case_when(
+      grepl("pi_n_pdi", population_group) ~ "pdi",
+      grepl("pi_n_non_pdi", population_group) ~ "non_pdi",
+      TRUE ~ population_group
+    ),
     sector = ifelse(sector == "", "intersectoral", gsub("_", "", sector)),
     score = severity,
     pin = ifelse(is.na(value) | value == "-", 0, as.numeric(value)),
     source = "ocha",
-    sector_general = ifelse(sector == "intersectoral", "intersectoral", "sectoral")
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
   )
 
 write_csv(
   df_cleaned,
   file_paths$save_path
 )
-

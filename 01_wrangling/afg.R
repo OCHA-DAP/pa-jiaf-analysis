@@ -42,9 +42,10 @@ df_clusters <- map_dfr(
     skip = 5,
     sheet = .x
   ) %>%
-    clean_names() %>% 
+    clean_names() %>%
     mutate(sector = .x)
-) %>% bind_rows()
+) %>%
+  bind_rows()
 
 
 ########################
@@ -55,13 +56,25 @@ df_clusters <- map_dfr(
 df_combined_all <- bind_rows(
   df_ocha_raw,
   df_clusters
-) 
-df_combined_all <- df_combined_all %>% 
+)
+df_combined_all <- df_combined_all %>%
   mutate(
-    number_inneed_m_children = rowSums(df_combined_all[,grep("m_children_", names(df_combined_all))], na.rm = T),
-    number_inneed_f_children = rowSums(df_combined_all[,grep("f_children_", names(df_combined_all))], na.rm = T),
-    number_inneed_m_adult = rowSums(df_combined_all[,grep("m_adult_", names(df_combined_all))], na.rm = T),
-    number_inneed_f_adult = rowSums(df_combined_all[,grep("f_adult_", names(df_combined_all))], na.rm = T)
+    number_inneed_m_children = rowSums(
+      df_combined_all[, grep("m_children_", names(df_combined_all))],
+      na.rm = TRUE
+    ),
+    number_inneed_f_children = rowSums(
+      df_combined_all[, grep("f_children_", names(df_combined_all))],
+      na.rm = TRUE
+    ),
+    number_inneed_m_adult = rowSums(
+      df_combined_all[, grep("m_adult_", names(df_combined_all))],
+      na.rm = TRUE
+    ),
+    number_inneed_f_adult = rowSums(
+      df_combined_all[, grep("f_adult_", names(df_combined_all))],
+      na.rm = TRUE
+    )
   ) %>%
   select(
     !c(
@@ -82,20 +95,36 @@ df_total <- df_combined_all %>%
     names_pattern = "(^number_inneed)_(.*)"
   ) %>%
   mutate(
-    population_group = gsub("(^m_children_|^f_children_|^m_adult_|^f_adult_|^total_)", "", group),
-    age_gender_group = str_replace(string = group, pattern = paste0("_", population_group), ""),
-    population_group = ifelse(age_gender_group == population_group, "total", population_group),
+    population_group = gsub(
+      "(^m_children_|^f_children_|^m_adult_|^f_adult_|^total_)",
+      "",
+      group
+    ),
+    age_gender_group = str_replace(
+      string = group,
+      pattern = paste0("_", population_group),
+      ""
+    ),
+    population_group = ifelse(
+      age_gender_group == population_group,
+      "total",
+      population_group
+    ),
     adm0_pcode = "AFG",
-    adm0_en = "Afghanistan",
+    adm0_name = "Afghanistan",
     source = "ocha",
-    sector_general = ifelse(sector == "intersectoral", "intersectoral", "sectoral")
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
   ) %>%
   filter(!grepl("total", group)) %>%
   select(
     adm0_pcode,
-    adm0_en,
+    adm0_name,
     adm1_pcode = number_admin1_code,
-    adm1_en = number_admin1_name,
+    adm1_name = number_admin1_name,
     population_group,
     age_gender_group,
     sector,

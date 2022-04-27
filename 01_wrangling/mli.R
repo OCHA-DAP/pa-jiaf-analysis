@@ -33,30 +33,36 @@ df_ocha_raw <- read_excel(
 ########################
 
 df_cleaned <- df_ocha_raw %>%
-  rename(abris = pin_21,
-         education = pin_22,
-         wash = pin_23,
-         nutrition = pin_24,
-         protection = pin_25,
-         health = pin_26,
-         food_security = pin_27,
-         intersectoral = pin_indicateurs_par_cercle
-         ) %>%
+  rename(
+    abris = pin_21,
+    education = pin_22,
+    wash = pin_23,
+    nutrition = pin_24,
+    protection = pin_25,
+    health = pin_26,
+    food_security = pin_27,
+    intersectoral = pin_indicateurs_par_cercle
+  ) %>%
   pivot_longer(
     cols = c(abris:food_security, intersectoral),
     names_to = "sector",
-    values_to = "pin") %>%
+    values_to = "pin"
+  ) %>%
   transmute(
-    adm0_en = "Mali",
+    adm0_name = "Mali",
     adm0_pcode = "MLI",
-    adm1_en = region,
+    adm1_name = region,
     adm1_pcode = pcode_reg,
-    adm2_en = cercle,
+    adm2_name = cercle,
     adm2_pcode = pcode_cer,
     sector,
     pin,
     source = "ocha",
-    sector_general = ifelse(sector == "intersectoral", "intersectoral", "sectoral")
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
   )
 
 write_csv(
