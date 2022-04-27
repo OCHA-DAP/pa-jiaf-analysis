@@ -27,30 +27,6 @@ df_ocha_clusters_raw <- read_excel(
 
 df_ocha_is_raw <- read_excel(ocha_fp, sheet = "Intersectoral PiN 2022")
 
-###############################
-#### CLUSTER PROVIDED DATA ####
-###############################
-
-# Education file has no relevant PiN
-
-df_gbv_raw <- read_excel(
-  file.path(
-    file_paths$cluster_dir,
-    "20210824_Libya_2022_HNO_PiN_FINAL GBV.xlsx"
-  ),
-  sheet = "GBV_PiN",
-  skip = 14
-)
-
-df_fs_raw <- read_excel(
-  file.path(
-    file_paths$cluster_dir,
-    "Libya 2022 FS.xlsx"
-  ),
-  sheet = "Sector PiN and Severity",
-  skip = 2
-)
-
 ########################
 #### DATA WRANGLING ####
 ########################
@@ -110,48 +86,6 @@ df_ocha_clusters <- df_ocha_clusters_raw %>%
     source = "ocha",
     .before = 1
   )
-
-# cluster provided pins
-
-df_gbv <- df_gbv_raw %>%
-  clean_names() %>%
-  select(
-    adm2_pcode = mantika_pcode,
-    adm3_pcode = baladiya_p_code,
-    population_group,
-    ends_with("pi_n")
-  ) %>%
-  pivot_longer(
-    ends_with("pi_n"),
-    names_to = c("sex", "age"),
-    names_pattern = "(.*)(?<=e)_(.*)_pi_n",
-    values_to = "pin"
-  ) %>%
-  mutate(
-    source = "cluster",
-    sector = "GBV",
-    .before = 1
-  )
-
-df_fs <- df_fs_raw %>%
-  clean_names() %>%
-  select(
-    sector,
-    ends_with("pcode"),
-    population_group,
-    matches("male")
-  ) %>%
-  pivot_longer(
-    matches("male"),
-    names_to = c("sex", "age"),
-    names_sep = "(?<=e)_",
-    values_to = "pin"
-  ) %>%
-  mutate(
-    source = "cluster",
-    .before = 1
-  )
-
 ############################
 #### GENERATE FULL DATA ####
 ############################
@@ -159,9 +93,7 @@ df_fs <- df_fs_raw %>%
 
 df_lby <- bind_rows(
   df_ocha_clusters,
-  df_ocha_is,
-  df_fs,
-  df_gbv
+  df_ocha_is
 ) %>%
   left_join(
     df_pcodes,

@@ -77,51 +77,13 @@ df_pcodes <- df_ocha_raw %>%
   distinct() %>%
   drop_na()
 
-######################
-#### CLUSTER DATA ####
-######################
-
-# Education
-ed_fp <- file.path(
-  file_paths$cluster_dir,
-  "Iraq - Education PiN & JIAF calculation - 2022 HNO.xlsx"
-)
-
-df_ed <- read_in_disagg(ed_fp) %>%
-  select(adm2_pcode, population_group, pin) %>%
-  drop_na() %>%
-  mutate(sector = "ed")
-
-# WASH
-wash_fp <- file.path(
-  file_paths$cluster_dir,
-  "WASH Iraq",
-  "2022",
-  "Iraq 2022 HNO Analysis - WASH Cluster - 5 Oct.xlsx"
-)
-
-df_wash <- read_in_disagg(wash_fp) %>%
-  select(adm2_pcode, population_group, pin) %>%
-  drop_na() %>%
-  mutate(sector = "wash")
-
-# Combine the clusters
-df_clusters <- bind_rows(
-  df_ed,
-  df_wash
-) %>%
-  mutate(source = "cluster", .before = 1)
-
 ############################
 #### GENERATE FULL DATA ####
 ############################
 # and in the darkness bind them
 
 
-df_irq <- bind_rows(
-  df_ocha,
-  df_clusters
-) %>%
+df_irq <- df_ocha %>%
   left_join(
     df_pcodes,
     by = "adm2_pcode"
