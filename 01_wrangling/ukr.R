@@ -226,8 +226,8 @@ df_all <- rbind(
   df_wash
 ) %>%
   transmute(
+    adm0_pcode = "UKR",
     adm0_name = "Ukraine",
-    adm1_pcode = "UKR",
     adm1_name = case_when(
       grepl("DON", key_unit) ~ "Donetska",
       grepl("LUN", key_unit) ~ "Luhanska",
