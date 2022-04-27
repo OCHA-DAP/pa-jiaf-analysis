@@ -268,6 +268,7 @@ df_col <- right_join(
 ) %>%
   filter(!is.na(adm1_es)) %>%
   mutate(
+    adm0_es = "Colombia",
     sector_general = ifelse(
       sector == "intersectorial",
       "intersectoral",
@@ -275,7 +276,15 @@ df_col <- right_join(
     ),
     across(starts_with("pin"), replace_na, 0)
   ) %>%
-  select(-c(adm2_file_code, sev))
+  select(-c(adm2_file_code, sev)) %>%
+  rename_at(
+    vars(ends_with("_es")),
+    ~ str_replace(
+      .x,
+      "_es",
+      "_name"
+    )
+  )
 
 write_csv(
   df_col,
