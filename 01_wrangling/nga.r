@@ -65,78 +65,11 @@ df_pcodes <- read_excel(
   ) %>%
   unique()
 
-######################
-#### CLUSTER DATA ####
-######################
-
-# Shelter and NFIs
-df_shelter <- read_excel(
-  file.path(
-    file_paths$cluster_dir,
-    "Nigeria_2022 ESNFI PiN & Target_01122021.xlsx"
-  ),
-  sheet = "PiN Breakdown Type",
-  range = "A1:G66"
-) %>%
-  clean_names() %>%
-  select(
-    adm2_en = lga,
-    id_ps:inaccessible
-  ) %>%
-  pivot_longer(
-    cols = -adm2_en,
-    names_to = "population_group",
-    values_to = "pin"
-  ) %>%
-  mutate(
-    population_group = ifelse(population_group == "id_ps",
-      "idps",
-      population_group
-    ),
-    sector = "Shelter & NFIs"
-  )
-
-
-# Education
-df_edu <- read_excel(
-  file.path(
-    file_paths$cluster_dir,
-    "Nigeria - Sector_PiN_SAAD.xlsx"
-  ),
-  sheet = "theData",
-  skip = 2
-) %>%
-  clean_names() %>%
-  select(
-    adm2_en = lga,
-    total_id_ps:total_host_community
-  ) %>%
-  pivot_longer(
-    -adm2_en,
-    names_to = "population_group",
-    values_to = "pin"
-  ) %>%
-  mutate(
-    population_group = case_when(
-      population_group == "total_id_ps" ~ "idps",
-      TRUE ~ str_match(population_group, "total_(.*)")[, 2]
-    ),
-    sector = "Education"
-  )
-
-# Combine clusters
-df_clusters <- df_shelter %>%
-  mutate(source = "cluster")
-
-
 ############################
 #### GENERATE FULL DATA ####
 ############################
 
-df_nga <- bind_rows(
-  df_ocha,
-  df_clusters
-) %>%
+df_nga <- df_ocha %>%
   left_join(df_pcodes,
     by = "adm2_en",
   ) %>%
