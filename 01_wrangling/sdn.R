@@ -57,32 +57,7 @@ df_ocha <- bind_rows(
 #### CLUSTER DATA ####
 ######################
 
-# GBV
-gbv_fp <- file.path(
-  file_paths$cluster_dir,
-  "20210927_Sudan_2022_HNO_PiN_FINAL GBV.xlsx"
-)
-
-df_gbv <- purrr::map2_dfr(
-  c("IDPs", "Returnees", "Vulnerable Hosts"),
-  c("idp", "ret", "vul"),
-  ~ read_excel(
-    gbv_fp,
-    sheet = .x,
-    skip = 18
-  ) %>%
-    rename_all(tolower) %>%
-    mutate(population_group = .y)
-) %>%
-  select(
-    adm2_pcode = admin2pcode,
-    population_group,
-    pin = gbv_pin
-  ) %>%
-  drop_na(adm2_pcode) %>%
-  mutate(sector = "gbv")
-
-# Education
+# Education file used for PCODES
 df_edu_raw <- read_excel(
   file.path(
     file_paths$cluster_dir,
@@ -91,26 +66,6 @@ df_edu_raw <- read_excel(
   sheet = "EDU", skip = 15
 ) %>%
   rename_all(tolower)
-
-
-df_edu <- df_edu_raw %>%
-  select(
-    adm2_pcode = `pcode admin2`,
-    starts_with("edu_pin_")
-  ) %>%
-  pivot_longer(
-    cols = -adm2_pcode,
-    names_to = c("sector", ".value", "population_group"),
-    names_sep = "_",
-  ) %>%
-  drop_na()
-
-# Combine clusters
-df_clusters <- bind_rows(
-  df_gbv,
-  df_edu
-) %>% mutate(source = "cluster")
-
 
 ###############
 ### PCODES ####
