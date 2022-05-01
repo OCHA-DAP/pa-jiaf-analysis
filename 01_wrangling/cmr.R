@@ -85,7 +85,18 @@ df_ocha <- df_ocha_raw %>%
     !is.na(pin)
   )
 
+# deleting those areas that don't have any PiN for a specific group
+df_summarized <- df_ocha %>%
+  group_by(adm2_name, population_group) %>%
+  summarise(tot_pin = sum(pin)) %>%
+  filter(tot_pin != 0)
+
+df_cleaned <- df_ocha %>% 
+  filter(
+    paste0(adm2_name, population_group) %in% paste0(df_summarized$adm2_name, df_summarized$population_group)
+  )
+
 write_csv(
-  df_ocha,
+  df_cleaned,
   file_paths$save_path
 )
