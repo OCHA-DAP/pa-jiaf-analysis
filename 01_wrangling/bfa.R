@@ -1,6 +1,7 @@
 library(tidyverse)
 library(readxl)
 library(janitor)
+library(expss)
 
 # helper functions to get paths
 source(here::here("99_helpers", "helpers.R"))
@@ -42,13 +43,13 @@ df_ocha <- df_ocha_raw %>%
     all_of(col_indexes)
   )
 
-names(df_ocha) <- df_ocha[1, ]
+names(df_ocha) <- as.character(df_ocha[1, ])
 
 ########################
 #### DATA WRANGLING ####
 ########################
 
-df_cleaned <- df_ocha %>%
+df_organized <- df_ocha %>%
   clean_names() %>%
   filter(id != "ID") %>%
   select(!c(matches("_total|pe$"))) %>%
@@ -82,6 +83,17 @@ df_cleaned <- df_ocha %>%
       "intersectoral",
       "sectoral"
     )
+  )
+
+# deleting those areas that don't have any PiN for a specific group
+df_summarized <- df_organized %>%
+  group_by(adm3_name, population_group) %>%
+  summarise(tot_pin = sum(pin)) %>%
+  filter(tot_pin != 0)
+
+df_cleaned <- df_organized %>% 
+  filter(
+    paste0(adm3_name, population_group) %in% paste0(df_summarized$adm3_name, df_summarized$population_group)
   )
 
 write_csv(
