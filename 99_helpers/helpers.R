@@ -1,3 +1,7 @@
+# Module constants
+aggregated_data_dir <- "Data aggregated for analysis"
+
+
 #' Generate directories and paths for PiN analysis
 #'
 #' @param country String with country name
@@ -41,7 +45,7 @@ get_paths <- function(country, country_name = NULL) {
   # file path to save pin data
   save_path <- file.path(
     data_dir,
-    "Data aggregated for analysis",
+    aggregated_data_dir,
     glue::glue("{iso3}_pins_2022.csv")
   )
 
@@ -50,4 +54,21 @@ get_paths <- function(country, country_name = NULL) {
     cluster_dir = cluster_dir,
     save_path = save_path
   )
+}
+
+get_paths_analysis <- function() {
+
+  # TODO: Make name of this a constant
+  data_dir <- Sys.getenv("JIAF_DATA_DIR")
+
+  input_dir <- file.path(
+    data_dir,
+    aggregated_data_dir
+  )
+
+  output_dir <- file.path(
+    data_dir,
+    "Data analyzed"
+  )
+  list(input_dir = input_dir, output_dir = output_dir)
 }
