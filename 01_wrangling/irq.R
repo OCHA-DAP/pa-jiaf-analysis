@@ -73,7 +73,7 @@ df_ocha <- df_ocha_raw %>%
 # Pcodes needed for IS table,
 # but only admin 1
 df_pcodes <- df_ocha_raw %>%
-  select(starts_with("adm")) %>%
+  select(dplyr::starts_with("adm")) %>%
   distinct() %>%
   drop_na()
 
@@ -104,11 +104,22 @@ df_irq <- df_ocha %>%
     )
   ) %>%
   rename_at(
-    vars(ends_with("_en")),
+    dplyr::vars(ends_with("_en")),
     ~ str_replace(.x, "_en", "_name")
   )
 
+# deleting those areas that don't have any PiN for a specific group
+df_summarized <- df_irq %>%
+  group_by(adm2_name, population_group) %>%
+  summarise(tot_pin = sum(pin)) %>%
+  filter(tot_pin != 0)
+
+df_cleaned <- df_irq %>% 
+  filter(
+    paste0(adm2_name, population_group) %in% paste0(df_summarized$adm2_name, df_summarized$population_group)
+  )
+
 write_csv(
-  df_irq,
+  df_cleaned,
   file_paths$save_path
 )
