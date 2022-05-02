@@ -6,12 +6,14 @@ source(here::here("99_helpers", "helpers.R"))
 
 jiaf_dir <- Sys.getenv("JIAF_DATA_DIR")
 file_dir <- file.path(jiaf_dir, "Data aggregated for analysis")
-save_path <- file.path(jiaf_dir, "Data analyzed")
+save_path <- file.path(jiaf_dir, "Data analyzed/HPC-2023")
 
 ###################
 #### WRANGLING ####
 ###################
 
+# TODO: to reproduce the old analysis would need to restrict
+# the ISO3s considered here
 df <- map_dfr(list.files(file_dir, full.names = TRUE), read_csv) %>%
   select(
     -matches("adm[0-9]{1}_[a-z]{2}$")
