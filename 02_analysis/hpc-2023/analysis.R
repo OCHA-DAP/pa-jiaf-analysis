@@ -1,20 +1,13 @@
 library(tidyverse)
 source(here::here("99_helpers", "helpers.R"))
 
-# Sample analysis to test our understanding
-# of what needs to be done
-
-jiaf_dir <- Sys.getenv("JIAF_DATA_DIR")
-file_dir <- file.path(jiaf_dir, "Data aggregated for analysis")
-save_path <- file.path(jiaf_dir, "Data analyzed/HPC-2023")
+file_paths <- get_paths_analysis()
 
 ###################
 #### WRANGLING ####
 ###################
 
-# TODO: to reproduce the old analysis would need to restrict
-# the ISO3s considered here
-df <- map_dfr(list.files(file_dir, full.names = TRUE), read_csv) %>%
+df <- map_dfr(list.files(file_paths$input_dir, full.names = TRUE), read_csv) %>%
   select(
     -matches("adm[0-9]{1}_[a-z]{2}$")
   ) %>%
@@ -43,6 +36,7 @@ max_df <- df %>%
   ) %>%
   drop_na(adm_pcode) %>%
   group_by(
+    adm0_name,
     adm0_pcode,
     sector_group,
     sector
@@ -61,6 +55,7 @@ max_df <- df %>%
     na.rm = TRUE
   ) %>%
   group_by(
+    adm0_name,
     adm0_pcode,
     adm_pcode,
     pop_group,
@@ -84,6 +79,7 @@ pct_df <- max_df %>%
     sector_group != "intersectoral"
   ) %>%
   group_by(
+    adm0_name,
     adm0_pcode,
     sector_group,
     max_sector
@@ -105,6 +101,7 @@ pct_df <- max_df %>%
 # method and country
 pin_df <- max_df %>%
   group_by(
+    adm0_name,
     adm0_pcode,
     sector_group,
   ) %>%
@@ -118,19 +115,99 @@ pin_df <- max_df %>%
     .groups = "drop"
   )
 
+# Make a file with cleaned up cluster names
+cluster_df <-
+  df %>% mutate(sector = tolower(sector)) %>% #clean up cluster names -- maybe there's a better way
+  mutate(
+    sector = case_when(
+      sector %in% c("cc", "cccm", "gsat") ~ "cccm",
+      # gestion des Sites d’Accueil Temporaire
+      sector %in% c(
+        "early recovery",
+        "early recovery & livelihoods",
+        "rt",
+        "el",
+        "mpca"
+      ) ~ "erl",
+      #rt is early recovery, el is emergency livelihoods and mpca is Multi-Purpose Cash Assistance
+      sector %in% c("education", "educacion", "educ", "ed") ~ "edu",
+      sector %in% c(
+        "fs",
+        "fss",
+        "fsl",
+        "fsc",
+        "food",
+        "food_sec",
+        "fslc",
+        "food security",
+        "food_security",
+        "seguridad_alimentaria",
+        "san_seguridad_alimentaria",
+        "seg_alimentaria",
+        "secal"
+      ) ~ "fsa",
+      # securité alimentaire
+      sector %in% c("sante" , "he", "health", "salud", "san", "hlt") ~ "hea",
+      sector %in% c(
+        "health & nutrition",
+        "nutrition",
+        "nutricion",
+        "san_nutrition",
+        "san_nutricion",
+        "nut"
+      ) ~ "nut",
+      sector %in% c(
+        "protection",
+        "proteccion",
+        "prot",
+        "protection_general",
+        "protection_aor",
+        "prt"
+      ) ~ "pro",
+      sector %in% c("protection_cp", "ninez", "cp", "child_protection") ~ "pro-cp",
+      sector %in% c("vbg", "protection_gbv", "pro-gen pro", "gbv", "gb", "gp") ~ "pro-gbv",
+      sector %in% c("hlp", "ltb", "protection_hlp") ~ "pro-hlp",
+      # Droit au Logement, à la Terre et aux Biens
+      sector %in% c("ma", "minas", "lam") ~ "pro-ma",
+      # lutte anti-mine
+      sector %in% c(
+        "abris",
+        "alojamiento_energia_y_enseres",
+        "alojamientos",
+        "abris_ame",
+        "snfi",
+        "shelter",
+        "shelter & nfis",
+        "shleter&nfis",
+        "shelter and nfi",
+        "sn" ,
+        "nfi"
+      ) ~ "shl",
+      sector == "el" ~ "livelihoods",
+      sector %in% c("wash", "wa", "eha") ~ "wsh",
+      sector %in% c("refugees", "refugee response", "migrants") ~ "displacement_status",
+      sector %in% c("inter_sectoral", "intersectorial", "itc") ~ "intersectoral"
+    )
+  ) %>% filter(sector != "intersectoral")
+
+
 # Clean up output file for actual output
-write_csv(
-  pct_df,
-  file.path(
-    save_path,
-    "2022_hno_pin_contributions.csv"
-  )
-)
+write_csv(pct_df,
+          file.path(file_paths$output_dir,
+                    "2022_hno_pin_contributions.csv"))
 
 write_csv(
   pin_df,
   file.path(
-    save_path,
+    file_paths$output_dir,
     "2022_hno_pin_totals.csv"
+  )
+)
+
+write_csv(
+  cluster_df,
+  file.path(
+    file_paths$output_dir,
+    "2022_hno_pin_cluster_totals.csv"
   )
 )
