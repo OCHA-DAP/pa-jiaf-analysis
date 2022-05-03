@@ -199,11 +199,7 @@ cluster_df <- df %>%
     sector == "mpca" ~ "unknown",
     TRUE ~ as.character(sector)
   )) %>%
-  filter(sector != "unknown") %>%
-  pivot_wider(names_from = sector, values_from = pin, , values_fn = list) %>%
-  unnest(cols = everything()) %>%
-  select(edu:erl)
-
+  filter(sector != "unknown")
 
 # Clean up output file for actual output
 write_csv(
