@@ -1,6 +1,7 @@
 library("ggplot2")
 library("tidyverse")
 library("stringr")
+library(scales)
 
 # TODO: refactor filepaths to helpers
 jiaf_dir <- Sys.getenv("JIAF_DATA_DIR")
@@ -99,3 +100,4 @@ df_pins %>%
 ggsave(file.path(save_path, "m-twg_2022_hno_pct_difference.png"),
   width = 7, height = 7
 )
+

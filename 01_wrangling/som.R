@@ -116,7 +116,7 @@ df_all <-
       TRUE ~ adm2_name
     ),
     population_group,
-    sector,
+    sector = ifelse(sector == "inter_sectoral", "intersectoral", sector),
     pin = round(pin),
     score,
     source = "ocha",

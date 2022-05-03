@@ -1,5 +1,6 @@
-library("ggplot2")
-library("tidyverse")
+library(ggplot2)
+library(scales)
+library(tidyverse)
 
 # TODO: refactor filepaths to helpers
 jiaf_dir <- Sys.getenv("JIAF_DATA_DIR")
@@ -47,7 +48,7 @@ ggplot(df_pins, aes(
     x = "Country ISO3",
     y = "PIN"
   ) +
-  scale_y_continuous(label = comma) +
+  scale_y_continuous(labels = comma) +
   theme_light()
 
 ggsave(file.path(save_path, "2022_hno_pin_totals.png"))
