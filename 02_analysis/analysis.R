@@ -41,6 +41,7 @@ max_df <- df %>%
   ) %>%
   drop_na(adm_pcode) %>%
   group_by(
+    adm0_name,
     adm0_pcode,
     sector_group,
     sector
@@ -59,6 +60,7 @@ max_df <- df %>%
     na.rm = TRUE
   ) %>%
   group_by(
+    adm0_name,
     adm0_pcode,
     adm_pcode,
     pop_group,
@@ -82,6 +84,7 @@ pct_df <- max_df %>%
     sector_group != "intersectoral"
   ) %>%
   group_by(
+    adm0_name,
     adm0_pcode,
     sector_group,
     max_sector
@@ -103,6 +106,7 @@ pct_df <- max_df %>%
 # method and country
 pin_df <- max_df %>%
   group_by(
+    adm0_name,
     adm0_pcode,
     sector_group,
   ) %>%

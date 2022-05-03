@@ -51,7 +51,9 @@ ggplot(df_pins, aes(
   scale_y_continuous(labels = comma) +
   theme_light()
 
-ggsave(file.path(save_path, "2022_hno_pin_totals.png"))
+ggsave(file.path(save_path, "2022_hno_pin_totals.png"),
+       width = 3840, height = 2018, units = "px"
+)
 
 # Plot the contribs
 
@@ -81,9 +83,14 @@ ggplot(
     x = "sector",
     y = "% contribution to intersectoral PIN"
   ) +
-  theme_light()
+  theme(strip.text = element_text(
+    size = 5),
+    axis.text = element_text(
+      size = 5))
 
-ggsave(file.path(save_path, "2022_hno_pin_contributions.png"))
+ggsave(file.path(save_path, "2022_hno_pin_contributions.png"),
+       width = 3840, height = 2018, units = "px", scale = 0.7
+)
 
 # difference with intersectoral
 df_pins %>%
@@ -143,4 +150,6 @@ df_pins %>%
     check_overlap = TRUE
   )
 
-ggsave(file.path(save_path, "2022_hno_pct_difference.png"))
+ggsave(file.path(save_path, "2022_hno_pct_difference.png"),
+  width = 3840, height = 2018, units = "px"
+)

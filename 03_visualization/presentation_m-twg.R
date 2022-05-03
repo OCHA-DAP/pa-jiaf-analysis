@@ -22,15 +22,6 @@ df_pins <- read.csv(
     sector_group != "sectoral_cluster",
   ) %>%
   mutate(
-    adm0_en = case_when(
-      adm0_pcode == "COL" ~ "Colombia",
-      adm0_pcode == "IRQ" ~ "Iraq",
-      adm0_pcode == "LBY" ~ "Libya",
-      adm0_pcode == "NGA" ~ "Nigeria",
-      adm0_pcode == "PSE" ~ "oPt",
-      adm0_pcode == "SDN" ~ "Sudan",
-      adm0_pcode == "AFG" ~ "Afghanistan"
-    ),
     scenario = case_when(
       adm0_pcode == "IRQ" ~ "A",
       adm0_pcode == "NGA" ~ "A",
@@ -38,7 +29,10 @@ df_pins <- read.csv(
       TRUE ~ "B"
     ),
   ) %>%
-  group_by(adm0_pcode) %>%
+  group_by(    
+    adm0_name,
+    adm0_pcode
+    ) %>%
   mutate(
     percent_diff = (pin - pin[sector_group == "intersectoral"])
     / pin[sector_group == "intersectoral"] * 100
@@ -57,7 +51,7 @@ df_pins <- read.csv(
 ##################
 
 ggplot(df_pins, aes(
-  fill = fct_rev(sector_group), y = pin, x = adm0_en,
+  fill = fct_rev(sector_group), y = pin, x = adm0_pcode,
   label = ifelse(percent_diff == 0, "",
     paste0(round(percent_diff, digits = 0), "%")
   )
@@ -74,7 +68,7 @@ ggplot(df_pins, aes(
   scale_fill_manual(values = c("#009988", "#EE7733"))
 
 ggsave(file.path(save_path, "m-twg_2022_hno_pin_totals.png"),
-  width = 7, height = 7
+  width = 3840, height = 2018, units = "px"
 )
 
 # difference with intersectoral
@@ -82,7 +76,7 @@ df_pins %>%
   filter(sector_group == "HPC 2023") %>%
   ggplot(
     aes(
-      y = fct_reorder(adm0_en, percent_diff),
+      y = fct_reorder(adm0_name, percent_diff),
       x = percent_diff,
       fill = change_direction
     )
@@ -98,6 +92,6 @@ df_pins %>%
   )
 
 ggsave(file.path(save_path, "m-twg_2022_hno_pct_difference.png"),
-  width = 7, height = 7
+  width = 3840, height = 2018, units = "px"
 )
 
