@@ -115,3 +115,146 @@ width = 5, height = 5, plot = fig1
 # pairwise, I've checked the significance with psych::corr and some
 # are significant, some not. Have trouble plotting it though because
 # the vectors are different size or something.
+
+#######################
+#### PERCENT TOTAL ####
+#######################
+
+df_sectoral <- df_corr %>%
+  group_by(
+    adm0_pcode,
+    adm0_name,
+    sector
+  ) %>%
+  summarize(
+    pin = sum(pin),
+    .groups = "drop"
+  ) %>%
+  pivot_wider(
+    names_from = sector,
+    values_from = pin
+  ) %>%
+  left_join(
+    filter(
+      df_pins,
+      sector_group == "intersectoral"
+    ) %>%
+      select(
+        adm0_pcode,
+        intersectoral_pin = pin
+      ),
+    by = c("adm0_pcode")
+  ) %>%
+  mutate(
+    across(
+      edu:erl,
+      ~ .x / intersectoral_pin
+    )
+  ) %>%
+  select(
+    -intersectoral_pin
+  ) %>%
+  pivot_longer(
+    -starts_with("adm0"),
+    names_to = "sector",
+    values_to = "pin_percent"
+  ) %>%
+  filter(
+    !is.na(pin_percent)
+  )
+
+# plot these as min to max
+
+df_violin <- df_sectoral %>%
+  filter(
+    !(adm0_pcode %in% c("UKR", "COL")) # need to check data first
+  ) %>%
+  group_by(sector) %>%
+  summarize(
+    min_perc = min(pin_percent),
+    max_perc = max(pin_percent),
+    n_country = n()
+  ) %>%
+  arrange(
+    desc(max_perc),
+    min_perc
+  ) %>%
+  mutate(
+    sector = factor(sector, levels = rev(sector))
+  )
+
+fig_pin_all <- df_violin %>%
+  ggplot() +
+  geom_segment(
+    aes(
+      y = sector,
+      yend = sector,
+      x = min_perc,
+      xend = max_perc
+    ),
+    lwd = 1.5
+  ) +
+  geom_text(
+    aes(
+      y = sector,
+      label = n_country
+    ),
+    x = 1.03,
+    fontface = "bold"
+  ) +
+  theme_minimal() +
+  scale_x_continuous(
+    labels = scales::percent_format(1)
+  ) +
+  labs(
+    x = "% of JIAF 1.1 intersectoral PiN",
+    y = "Sector",
+    title = "Sectoral PiN as % of JIAF 1.1 intersectoral PiN",
+    subtitle = paste0(
+      "Minimum to maximum percent across ",
+      "n countries (specified to the right)"
+    )
+  )
+
+ggsave(file.path(file_paths$output_dir, "2022_hno_pin_percent_all.png"),
+  width = 10, height = 7, plot = fig_pin_all
+)
+
+# heat map version
+
+fig_heatmap <- df_sectoral %>%
+  filter(
+    !(adm0_pcode %in% c("UKR", "COL")) # need to check data first
+  ) %>%
+  mutate(
+    sector = factor(sector, levels = levels(df_violin$sector))
+  ) %>%
+  ggplot() +
+  geom_tile(
+    aes(
+      x = sector,
+      y = adm0_name,
+      fill = pin_percent
+    )
+  ) +
+  theme_minimal() +
+  theme(
+    panel.border = element_blank(),
+    panel.grid = element_blank()
+  ) +
+  scale_fill_gradient(
+    labels = scales::percent_format(1),
+    low = "white",
+    high = "#F2645A"
+  ) +
+  labs(
+    fill = "% of JIAF 1.1 intersectoral PiN",
+    y = "Country",
+    x = "Sector",
+    title = "Sectoral PiN as % of JIAF 1.1 intersectoral PiN"
+  )
+
+
+ggsave(file.path(file_paths$output_dir, "2022_hno_pin_percent_countries.png"),
+  width = 10, height = 7, plot = fig_heatmap
+)
