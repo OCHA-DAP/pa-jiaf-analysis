@@ -111,6 +111,7 @@ df_scores <- df_combined_all %>%
   )
 
 # combining the pins and severities and reformatting
+
 df_syr <- left_join(
   df_pins,
   df_scores,
