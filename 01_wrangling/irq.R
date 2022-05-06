@@ -104,6 +104,10 @@ df_organized <- df_ocha %>%
       "intersectoral",
       "sectoral"
     )
+  ) %>%
+  rename_at(
+    dplyr::vars(ends_with("_en")),
+    ~ str_replace(.x, "_en", "_name")
   )
 
 # deleting those areas that don't have any PiN for a specific group
@@ -120,6 +124,6 @@ df_irq <- df_organized %>%
   )
 
 write_csv(
-  df_irq,
+  df_cleaned,
   file_paths$save_path
 )
