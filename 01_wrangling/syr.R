@@ -69,17 +69,21 @@ df_combined_all <- left_join(
 ) %>%
   left_join(
     df_clusters,
-    by = c("admin1name_en",
-           "admin1pcode",
-           "admin2name_en",
-           "admin2pcode",
-           "admin3name_en",
-           "admin3pcode")
+    by = c(
+      "admin1name_en",
+      "admin1pcode",
+      "admin2name_en",
+      "admin2pcode",
+      "admin3name_en",
+      "admin3pcode"
+    )
   ) %>%
   filter(df_ocha_pin$final_est_of_total_pop_aug_2021 != 0) %>%
-  mutate_at(
-    vars(matches("_pin|_severity")),
-    as.numeric
+  mutate(
+    across(
+      matches("_pin|_severity"),
+      as.numeric
+    )
   )
 
 # pivoting the pins
@@ -105,21 +109,23 @@ df_scores <- df_combined_all %>%
     sector = gsub("_severity", "", sector),
     score = round(replace_na(score, 0))
   )
-  
+
 # combining the pins and severities and reformatting
-df_all <- left_join(
-  df_pins, 
-  df_scores, 
-  by = c("admin1name_en",
-         "admin1pcode",
-         "admin2name_en",
-         "admin2pcode",
-         "admin3name_en",
-         "admin3pcode",
-         "sector")
-  ) %>%
+df_syr <- left_join(
+  df_pins,
+  df_scores,
+  by = c(
+    "admin1name_en",
+    "admin1pcode",
+    "admin2name_en",
+    "admin2pcode",
+    "admin3name_en",
+    "admin3pcode",
+    "sector"
+  )
+) %>%
   transmute(
-    adm0_en = "Syria",
+    adm0_name = "Syria",
     adm0_pcode = "SYR",
     adm1_name = admin1name_en,
     adm1_pcode = admin1pcode,
@@ -129,12 +135,16 @@ df_all <- left_join(
     adm3_pcode = admin3pcode,
     sector,
     pin,
-    score = ifelse(pin == 0, 0, score),
+    severity = ifelse(pin == 0, 1, score),
     source = "ocha",
-    sector_general = ifelse(sector == "intersectoral", "intersectoral", "sectoral")
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
   )
 
 write_csv(
-  df_all,
+  df_syr,
   file_paths$save_path
 )

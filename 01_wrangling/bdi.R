@@ -50,25 +50,36 @@ df_cleaned <- df_ocha_raw %>%
   pivot_longer(
     cols = c(abris:secal, pin_final),
     names_to = "sector",
-    values_to = "pin") %>%
+    values_to = "pin"
+  ) %>%
   transmute(
-    adm0_en = "Burundi",
+    adm0_name = "Burundi",
     adm0_pcode = "BDI",
-    adm1_en = province,
-    adm1_pcode = df_ocha_pcode_extract$adm1_pcode[match(province, df_ocha_pcode_extract$adm1_state)],
+    adm1_name = province,
+    adm1_pcode = df_ocha_pcode_extract$adm1_pcode[match(
+      province,
+      df_ocha_pcode_extract$adm1_state
+    )],
     population_group = gsub("[0-9]_", "", population),
     sector = ifelse(sector == "pin_final", "intersectoral", sector),
     pin,
     source = "ocha",
-    sector_general = ifelse(sector == "intersectoral", "intersectoral", "sectoral")
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
   )
 
 df_refugees_cleaned <- df_ocha_refugees %>%
   transmute(
-    adm0_en = "Burundi",
+    adm0_name = "Burundi",
     adm0_pcode = "BDI",
-    adm1_en = province_43,
-    adm1_pcode = df_ocha_pcode_extract$adm1_pcode[match(province_43, df_ocha_pcode_extract$adm1_state)],
+    adm1_name = province_43,
+    adm1_pcode = df_ocha_pcode_extract$adm1_pcode[match(
+      province_43,
+      df_ocha_pcode_extract$adm1_state
+    )],
     population_group = "refugees",
     sector = "refugees",
     pin = total_64,
@@ -79,12 +90,22 @@ df_refugees_cleaned <- df_ocha_refugees %>%
 df_all <- rbind(
   df_cleaned,
   df_refugees_cleaned
+)
+
+# deleting those areas that don't have any PiN for a specific group
+df_summarized_pops <- df_all %>%
+  group_by(adm1_name, population_group) %>%
+  summarise(tot_pin = sum(pin, na.rm = T)) %>%
+  filter(tot_pin != 0)
+
+df_bdi <- df_all %>% 
+  filter(
+    paste0(adm1_name, population_group) %in% paste0(df_summarized_pops$adm1_name, df_summarized_pops$population_group)) %>%
+  mutate(
+    pin = round(pin, 0)
   )
 
 write_csv(
-  df_all,
+  df_bdi,
   file_paths$save_path
 )
-
-
-

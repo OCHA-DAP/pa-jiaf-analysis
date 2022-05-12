@@ -31,25 +31,28 @@ df_ocha_raw <- read_excel(
 #### DATA WRANGLING ####
 ########################
 
-df_all <- df_ocha_raw %>%
+df_ven <- df_ocha_raw %>%
   pivot_longer(
     cols = -c(pcode, estado),
     names_to = "sector",
     values_to = "pin"
-  ) %>% 
+  ) %>%
   transmute(
-    adm0_en = "Venezuela",
+    adm0_name = "Venezuela",
     adm0_pcode = "VEN",
     adm1_name = estado,
     adm1_pcode = pcode,
     sector = ifelse(sector == "total_pin", "intersectoral", sector),
     pin = round(pin),
     source = "ocha",
-    sector_general = ifelse(sector == "intersectoral", "intersectoral", "sectoral")
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
   )
 
 write_csv(
-  df_all,
+  df_ven,
   file_paths$save_path
 )
-

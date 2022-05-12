@@ -27,29 +27,17 @@ df_ocha_clusters_raw <- read_excel(
 
 df_ocha_is_raw <- read_excel(ocha_fp, sheet = "Intersectoral PiN 2022")
 
-###############################
-#### CLUSTER PROVIDED DATA ####
-###############################
-
-# Education file has no relevant PiN
-
-df_gbv_raw <- read_excel(
+df_adm1 <- read_excel(
   file.path(
-    file_paths$cluster_dir,
-    "20210824_Libya_2022_HNO_PiN_FINAL GBV.xlsx"
+    file_paths$ocha_dir,
+    "lby_adminboundaries_tabulardata.xlsx"
   ),
-  sheet = "GBV_PiN",
-  skip = 14
-)
-
-df_fs_raw <- read_excel(
-  file.path(
-    file_paths$cluster_dir,
-    "Libya 2022 FS.xlsx"
-  ),
-  sheet = "Sector PiN and Severity",
-  skip = 2
-)
+  sheet = "Admin1"
+) %>%
+  select(
+    adm1_pcode = admin1Pcode,
+    adm1_name = admin1Name_en
+  )
 
 ########################
 #### DATA WRANGLING ####
@@ -96,6 +84,7 @@ df_ocha_clusters <- df_ocha_clusters_raw %>%
   clean_names() %>%
   select(
     sector,
+    severity,
     ends_with("pcode"),
     population_group,
     matches("male")
@@ -111,57 +100,14 @@ df_ocha_clusters <- df_ocha_clusters_raw %>%
     .before = 1
   )
 
-# cluster provided pins
-
-df_gbv <- df_gbv_raw %>%
-  clean_names() %>%
-  select(
-    adm2_pcode = mantika_pcode,
-    adm3_pcode = baladiya_p_code,
-    population_group,
-    ends_with("pi_n")
-  ) %>%
-  pivot_longer(
-    ends_with("pi_n"),
-    names_to = c("sex", "age"),
-    names_pattern = "(.*)(?<=e)_(.*)_pi_n",
-    values_to = "pin"
-  ) %>%
-  mutate(
-    source = "cluster",
-    sector = "GBV",
-    .before = 1
-  )
-
-df_fs <- df_fs_raw %>%
-  clean_names() %>%
-  select(
-    sector,
-    ends_with("pcode"),
-    population_group,
-    matches("male")
-  ) %>%
-  pivot_longer(
-    matches("male"),
-    names_to = c("sex", "age"),
-    names_sep = "(?<=e)_",
-    values_to = "pin"
-  ) %>%
-  mutate(
-    source = "cluster",
-    .before = 1
-  )
-
 ############################
 #### GENERATE FULL DATA ####
 ############################
 # and in the darkness bind them
 
-df_lby <- bind_rows(
+df_organized <- bind_rows(
   df_ocha_clusters,
-  df_ocha_is,
-  df_fs,
-  df_gbv
+  df_ocha_is
 ) %>%
   left_join(
     df_pcodes,
@@ -186,7 +132,37 @@ df_lby <- bind_rows(
       "intersectoral",
       "sectoral"
     )
+  ) %>%
+  rename_at(
+    dplyr::vars(ends_with("_en")),
+    ~ str_replace(.x, "_en", "_name")
+  ) %>%
+  left_join(
+    df_adm1,
+    by = c("adm1_pcode")
+  ) %>%
+  relocate(
+    adm1_name,
+    .before = adm2_pcode
   )
+
+# deleting those areas that don't have any PiN for a specific group
+df_summarized_pops <- df_organized %>%
+  group_by(adm3_name, population_group) %>%
+  summarise(tot_pin = sum(pin, na.rm = T)) %>%
+  filter(tot_pin != 0)
+
+# deleting those age-sex groups that don't have any PiN for a specific sectoral PiN
+df_summarized_age_sex <- df_organized %>%
+  group_by(sector, age_sex = paste0(age, sex)) %>%
+  summarize(tot_pin = sum(pin, na.rm = T)) %>%
+  filter(tot_pin != 0)
+
+df_lby <- df_organized %>% 
+  filter(
+    paste0(adm3_name, population_group) %in% paste0(df_summarized_pops$adm3_name, df_summarized_pops$population_group),
+    paste0(sector, age, sex) %in% paste0(df_summarized_age_sex$sector, df_summarized_age_sex$age_sex)
+  ) 
 
 write_csv(
   df_lby,

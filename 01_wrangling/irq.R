@@ -73,44 +73,9 @@ df_ocha <- df_ocha_raw %>%
 # Pcodes needed for IS table,
 # but only admin 1
 df_pcodes <- df_ocha_raw %>%
-  select(starts_with("adm")) %>%
+  select(dplyr::starts_with("adm")) %>%
   distinct() %>%
   drop_na()
-
-######################
-#### CLUSTER DATA ####
-######################
-
-# Education
-ed_fp <- file.path(
-  file_paths$cluster_dir,
-  "Iraq - Education PiN & JIAF calculation - 2022 HNO.xlsx"
-)
-
-df_ed <- read_in_disagg(ed_fp) %>%
-  select(adm2_pcode, population_group, pin) %>%
-  drop_na() %>%
-  mutate(sector = "ed")
-
-# WASH
-wash_fp <- file.path(
-  file_paths$cluster_dir,
-  "WASH Iraq",
-  "2022",
-  "Iraq 2022 HNO Analysis - WASH Cluster - 5 Oct.xlsx"
-)
-
-df_wash <- read_in_disagg(wash_fp) %>%
-  select(adm2_pcode, population_group, pin) %>%
-  drop_na() %>%
-  mutate(sector = "wash")
-
-# Combine the clusters
-df_clusters <- bind_rows(
-  df_ed,
-  df_wash
-) %>%
-  mutate(source = "cluster", .before = 1)
 
 ############################
 #### GENERATE FULL DATA ####
@@ -118,10 +83,7 @@ df_clusters <- bind_rows(
 # and in the darkness bind them
 
 
-df_irq <- bind_rows(
-  df_ocha,
-  df_clusters
-) %>%
+df_organized <- df_ocha %>%
   left_join(
     df_pcodes,
     by = "adm2_pcode"
@@ -140,6 +102,21 @@ df_irq <- bind_rows(
       "intersectoral",
       "sectoral"
     )
+  ) %>%
+  rename_at(
+    dplyr::vars(ends_with("_en")),
+    ~ str_replace(.x, "_en", "_name")
+  )
+
+# deleting those areas that don't have any PiN for a specific group
+df_summarized <- df_organized %>%
+  group_by(adm2_name, population_group) %>%
+  summarise(tot_pin = sum(pin)) %>%
+  filter(tot_pin != 0)
+
+df_irq <- df_organized %>% 
+  filter(
+    paste0(adm2_name, population_group) %in% paste0(df_summarized$adm2_name, df_summarized$population_group)
   )
 
 write_csv(
