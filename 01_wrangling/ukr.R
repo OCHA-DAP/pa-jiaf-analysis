@@ -239,6 +239,8 @@ df_organized <- rbind(
       grepl("LUN", key_unit) ~ "Uk44",
       TRUE ~ "Other"
     ),
+    adm2_pcode = gsub("GCA_|NGCA_|IDPS__|IDPS_", "", key_unit),
+    adm2_name = adm2_pcode,
     administration = case_when(
       grepl("NGCA", key_unit) ~ "non_governement_controlled",
       grepl("GCA", key_unit) ~ "governement_controlled",
@@ -257,7 +259,7 @@ df_organized <- rbind(
 
 # deleting those areas that don't have any PiN for a specific group
 df_summarized_pops <- df_organized %>%
-  group_by(adm1_name, population_group) %>%
+  group_by(adm2_name, population_group) %>%
   summarise(tot_pin = sum(pin, na.rm = T)) %>%
   filter(tot_pin != 0)
 
@@ -269,9 +271,12 @@ df_summarized_administration <- df_organized %>%
 
 df_ukr <- df_organized %>% 
   filter(
-    paste0(adm1_name, population_group) %in% paste0(df_summarized_pops$adm1_name, df_summarized_pops$population_group),
+    paste0(adm2_name, population_group) %in% paste0(df_summarized_pops$adm2_name, df_summarized_pops$population_group),
     paste0(sector, administration) %in% paste0(df_summarized_administration$sector, df_summarized_administration$administration)
   ) 
+
+abc <- df_ukr %>% filter(sector != "intersectoral") %>% group_by(adm1_name, administration, population_group) %>%
+  summarize(pin = max(pin))
 
 write_csv(
   df_ukr,

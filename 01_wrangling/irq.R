@@ -60,11 +60,11 @@ df_ocha_raw <- read_in_disagg(ocha_fp)
 # drop strange empty columns
 df_ocha <- df_ocha_raw %>%
   pivot_longer(
-    cols = ends_with("pin"),
+    cols = ends_with("pin") | ends_with("sev"),
     names_to = c("sector", ".value"),
     names_sep = "_"
   ) %>%
-  select(adm2_pcode, population_group, sector, pin) %>%
+  select(adm2_pcode, population_group, sector, pin, severity = sev) %>%
   drop_na(adm2_pcode) %>%
   mutate(
     source = "ocha"
@@ -87,24 +87,23 @@ df_organized <- df_ocha %>%
     df_pcodes,
     by = "adm2_pcode"
   ) %>%
-  relocate(adm1_en:adm2_en,
-    .before = 1
-  ) %>%
-  mutate(
+  transmute(
+    adm0_name = "Iraq",
     adm0_pcode = "IRQ",
-    adm0_en = "Iraq",
-    .before = adm1_en,
-  ) %>%
-  mutate(
+    adm1_name = adm1_en,
+    adm1_pcode,
+    adm2_name = adm2_en,
+    adm2_pcode,
+    population_group,
+    sector,
+    pin = round(pin),
+    severity = ifelse(pin == 0, 1, severity),
+    source = "ocha",
     sector_general = ifelse(
       sector == "itc",
       "intersectoral",
       "sectoral"
     )
-  ) %>%
-  rename_at(
-    dplyr::vars(ends_with("_en")),
-    ~ str_replace(.x, "_en", "_name")
   )
 
 # deleting those areas that don't have any PiN for a specific group
