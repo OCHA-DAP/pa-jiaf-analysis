@@ -291,6 +291,9 @@ abc <- df_ukr %>%
   group_by(adm1_name, administration, population_group) %>%
   summarize(pin = max(pin))
 
+abc <- df_ukr %>% filter(sector != "intersectoral") %>% group_by(adm1_name, administration, population_group) %>%
+  summarize(pin = max(pin))
+
 write_csv(
   df_ukr,
   file_paths$save_path
