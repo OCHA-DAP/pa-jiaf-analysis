@@ -84,6 +84,7 @@ df_ocha_clusters <- df_ocha_clusters_raw %>%
   clean_names() %>%
   select(
     sector,
+    severity,
     ends_with("pcode"),
     population_group,
     matches("male")
@@ -98,12 +99,13 @@ df_ocha_clusters <- df_ocha_clusters_raw %>%
     source = "ocha",
     .before = 1
   )
+
 ############################
 #### GENERATE FULL DATA ####
 ############################
 # and in the darkness bind them
 
-df_lby <- bind_rows(
+df_organized <- bind_rows(
   df_ocha_clusters,
   df_ocha_is
 ) %>%
@@ -132,7 +134,7 @@ df_lby <- bind_rows(
     )
   ) %>%
   rename_at(
-    vars(ends_with("_en")),
+    dplyr::vars(ends_with("_en")),
     ~ str_replace(.x, "_en", "_name")
   ) %>%
   left_join(
@@ -143,6 +145,24 @@ df_lby <- bind_rows(
     adm1_name,
     .before = adm2_pcode
   )
+
+# deleting those areas that don't have any PiN for a specific group
+df_summarized_pops <- df_organized %>%
+  group_by(adm3_name, population_group) %>%
+  summarise(tot_pin = sum(pin, na.rm = T)) %>%
+  filter(tot_pin != 0)
+
+# deleting those age-sex groups that don't have any PiN for a specific sectoral PiN
+df_summarized_age_sex <- df_organized %>%
+  group_by(sector, age_sex = paste0(age, sex)) %>%
+  summarize(tot_pin = sum(pin, na.rm = T)) %>%
+  filter(tot_pin != 0)
+
+df_lby <- df_organized %>% 
+  filter(
+    paste0(adm3_name, population_group) %in% paste0(df_summarized_pops$adm3_name, df_summarized_pops$population_group),
+    paste0(sector, age, sex) %in% paste0(df_summarized_age_sex$sector, df_summarized_age_sex$age_sex)
+  ) 
 
 write_csv(
   df_lby,

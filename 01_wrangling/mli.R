@@ -32,7 +32,8 @@ df_ocha_raw <- read_excel(
 #### DATA WRANGLING ####
 ########################
 
-df_cleaned <- df_ocha_raw %>%
+
+df_mli <- df_ocha_raw %>%
   rename(
     abris = pin_21,
     education = pin_22,
@@ -56,7 +57,7 @@ df_cleaned <- df_ocha_raw %>%
     adm2_name = cercle,
     adm2_pcode = pcode_cer,
     sector,
-    pin,
+    pin = round(pin),
     source = "ocha",
     sector_general = ifelse(
       sector == "intersectoral",
@@ -66,6 +67,6 @@ df_cleaned <- df_ocha_raw %>%
   )
 
 write_csv(
-  df_cleaned,
+  df_mli,
   file_paths$save_path
 )

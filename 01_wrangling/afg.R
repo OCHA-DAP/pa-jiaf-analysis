@@ -88,7 +88,7 @@ df_combined_all <- df_combined_all %>%
 
 names(df_combined_all) <- gsub("_x_", "_", names(df_combined_all))
 
-df_total <- df_combined_all %>%
+df_organized <- df_combined_all %>%
   pivot_longer(
     cols = matches("^number_inneed"),
     names_to = c(".value", "group"),
@@ -134,10 +134,31 @@ df_total <- df_combined_all %>%
     pin = number_inneed,
     source,
     sector_general
+  ) 
+
+# deleting those areas that don't have any PiN for a specific group
+df_summarized_pops <- df_organized %>%
+  group_by(adm1_name, population_group) %>%
+  summarise(tot_pin = sum(pin, na.rm = T)) %>%
+  filter(tot_pin != 0)
+
+# deleting those age-sex groups that don't have any PiN for a specific sectoral PiN
+df_summarized_age_sex <- df_organized %>%
+  group_by(sector, age_gender_group) %>%
+  summarize(tot_pin = sum(pin, na.rm = T)) %>%
+  filter(tot_pin != 0)
+
+df_afg <- df_organized %>% 
+  filter(
+    paste0(adm1_name, population_group) %in% paste0(df_summarized_pops$adm1_name, df_summarized_pops$population_group),
+    paste0(sector, age_gender_group) %in% paste0(df_summarized_age_sex$sector, df_summarized_age_sex$age_gender_group)
   ) %>%
-  separate(age_gender_group, into = c("age", "sex"))
+  separate(age_gender_group, into = c("age", "sex")) %>%
+  mutate(
+    pin = round(pin, 0)
+  )
 
 write_csv(
-  df_total,
+  df_afg,
   file_paths$save_path
 )

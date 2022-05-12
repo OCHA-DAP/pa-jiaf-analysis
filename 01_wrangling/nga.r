@@ -73,23 +73,20 @@ df_nga <- df_ocha %>%
   left_join(df_pcodes,
     by = "adm2_en",
   ) %>%
-  relocate(adm1_pcode:adm2_pcode, .before = adm2_en) %>%
-  mutate(
-    adm0_en = "Nigeria",
+  transmute(
+    adm0_name = "Nigeria",
     adm0_pcode = "NGA",
-    .before = adm1_pcode,
-  ) %>%
-  mutate(
-    sector_general = ifelse(
-      sector == "intersectoral",
-      "intersectoral",
-      "sectoral"
+    adm1_name = adm1_en,
+    adm1_pcode,    
+    adm2_name = adm2_en,
+    adm2_pcode,
+    sector, 
+    pin = round(pin),
+    source = "ocha",
+    sector_general = ifelse(sector == "intersectoral",
+                            "intersectoral",
+                            "sectoral")
     )
-  ) %>%
-  rename_at(
-    vars(ends_with("_en")),
-    ~ str_replace(.x, "_en", "_name")
-  )
 
 write_csv(
   df_nga,

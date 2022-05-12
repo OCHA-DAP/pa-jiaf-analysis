@@ -75,8 +75,8 @@ df_organized <- df_ocha %>%
       TRUE ~ population_group
     ),
     sector = ifelse(sector == "", "intersectoral", gsub("_", "", sector)),
-    score = severity,
-    pin = ifelse(is.na(value) | value == "-", 0, as.numeric(value)),
+    severity,
+    pin = ifelse(is.na(value) | value == "-", 0, round(as.numeric(value, 0))),
     source = "ocha",
     sector_general = ifelse(
       sector == "intersectoral",
@@ -91,12 +91,12 @@ df_summarized <- df_organized %>%
   summarise(tot_pin = sum(pin)) %>%
   filter(tot_pin != 0)
 
-df_cleaned <- df_organized %>% 
+df_bfa <- df_organized %>% 
   filter(
     paste0(adm3_name, population_group) %in% paste0(df_summarized$adm3_name, df_summarized$population_group)
   )
 
 write_csv(
-  df_cleaned,
+  df_bfa,
   file_paths$save_path
 )

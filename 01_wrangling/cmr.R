@@ -53,7 +53,7 @@ df_ocha_raw <- map_dfr(
 #### DATA WRANGLING ####
 ########################
 
-df_ocha <- df_ocha_raw %>%
+df_organized <- df_ocha_raw %>%
   pivot_longer(
     cols = n_pdi:n_other,
     names_to = "population_group"
@@ -70,8 +70,8 @@ df_ocha <- df_ocha_raw %>%
       "intersectoral",
       sector
     ),
-    sex = sexe,
     age,
+    sex = sexe,
     population_group = gsub("n_", "", population_group),
     pin = value,
     source = "ocha",
@@ -80,23 +80,27 @@ df_ocha <- df_ocha_raw %>%
       "intersectoral",
       "sectoral"
     )
-  ) %>%
-  filter(
-    !is.na(pin)
   )
 
 # deleting those areas that don't have any PiN for a specific group
-df_summarized <- df_ocha %>%
+df_summarized_pops <- df_organized %>%
   group_by(adm2_name, population_group) %>%
-  summarise(tot_pin = sum(pin)) %>%
+  summarise(tot_pin = sum(pin, na.rm = T)) %>%
   filter(tot_pin != 0)
 
-df_cleaned <- df_ocha %>% 
+# deleting those age-sex groups that don't have any PiN for a specific sectoral PiN
+df_summarized_age_sex <- df_organized %>%
+  group_by(sector, age_sex = paste0(age, sex)) %>%
+  summarize(tot_pin = sum(pin, na.rm = T)) %>%
+  filter(tot_pin != 0)
+
+df_cmr <- df_organized %>% 
   filter(
-    paste0(adm2_name, population_group) %in% paste0(df_summarized$adm2_name, df_summarized$population_group)
-  )
+    paste0(adm2_name, population_group) %in% paste0(df_summarized_pops$adm2_name, df_summarized_pops$population_group),
+    paste0(sector, age, sex) %in% paste0(df_summarized_age_sex$sector, df_summarized_age_sex$age_sex)
+  ) 
 
 write_csv(
-  df_cleaned,
+  df_cmr,
   file_paths$save_path
 )

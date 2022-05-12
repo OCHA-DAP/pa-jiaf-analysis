@@ -92,7 +92,20 @@ df_all <- rbind(
   df_refugees_cleaned
 )
 
+# deleting those areas that don't have any PiN for a specific group
+df_summarized_pops <- df_all %>%
+  group_by(adm1_name, population_group) %>%
+  summarise(tot_pin = sum(pin, na.rm = T)) %>%
+  filter(tot_pin != 0)
+
+df_bdi <- df_all %>% 
+  filter(
+    paste0(adm1_name, population_group) %in% paste0(df_summarized_pops$adm1_name, df_summarized_pops$population_group)) %>%
+  mutate(
+    pin = round(pin, 0)
+  )
+
 write_csv(
-  df_all,
+  df_bdi,
   file_paths$save_path
 )

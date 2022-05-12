@@ -111,7 +111,8 @@ df_scores <- df_combined_all %>%
   )
 
 # combining the pins and severities and reformatting
-df_all <- left_join(
+
+df_syr <- left_join(
   df_pins,
   df_scores,
   by = c(
@@ -135,7 +136,7 @@ df_all <- left_join(
     adm3_pcode = admin3pcode,
     sector,
     pin,
-    score = ifelse(pin == 0, 0, score),
+    severity = ifelse(pin == 0, 1, score),
     source = "ocha",
     sector_general = ifelse(
       sector == "intersectoral",
@@ -145,6 +146,6 @@ df_all <- left_join(
   )
 
 write_csv(
-  df_all,
+  df_syr,
   file_paths$save_path
 )

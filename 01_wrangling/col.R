@@ -85,22 +85,20 @@ df_col <- right_join(
   by = "adm2_file_code"
 ) %>%
   filter(!is.na(adm1_es)) %>%
-  mutate(
-    adm0_es = "Colombia",
+  transmute(
+    adm0_name = "Colombia",
+    adm0_pcode,
+    adm1_name = adm1_es,
+    adm1_pcode,
+    adm2_name = adm2_es,
+    adm2_pcode,
+    sector,
+    pin = round(replace_na(pin, 0), 0),
+    source = "ocha",
     sector_general = ifelse(
-      sector == "intersectorial",
+      sector == "intersectoral",
       "intersectoral",
       "sectoral"
-    ),
-    across(starts_with("pin"), replace_na, 0)
-  ) %>%
-  select(-c(adm2_file_code)) %>%
-  rename_at(
-    vars(ends_with("_es")),
-    ~ str_replace(
-      .x,
-      "_es",
-      "_name"
     )
   )
 

@@ -91,28 +91,19 @@ df_pse <- df_ocha %>%
     by = "adm2_en",
   ) %>%
   drop_na(adm1_en) %>%
-  relocate(adm2_en, .before = sector) %>%
-  relocate(adm1_en, .before = adm2_en) %>%
-  mutate(
-    adm0_en = "oPt",
+  transmute(
+    adm0_name = "oPt",
     adm0_pcode = "PSE",
-    adm1_pcode = adm1_en,
-    .before = adm1_en
-  ) %>%
-  mutate(
-    adm2_pcode = adm2_en,
-    .before = adm2_en
-  ) %>%
-  mutate(
-    sector_general = ifelse(
-      sector == "intersectoral",
-      "intersectoral",
-      "sectoral"
-    )
-  ) %>%
-  rename_at(
-    vars(ends_with("_en")),
-    ~ str_replace(.x, "_en", "_name")
+    adm1_name = adm1_en,
+    adm1_pcode = adm1_en,    
+    adm2_name = adm2_en,
+    adm2_pcode = adm1_en,
+    sector, 
+    pin = round(pin),
+    source = "ocha",
+    sector_general = ifelse(sector == "intersectoral",
+                            "intersectoral",
+                            "sectoral")
   )
 
 write_csv(

@@ -31,7 +31,7 @@ df_ocha_raw <- read_excel(
 #### DATA WRANGLING ####
 ########################
 
-df_all <- df_ocha_raw %>%
+df_ven <- df_ocha_raw %>%
   pivot_longer(
     cols = -c(pcode, estado),
     names_to = "sector",
@@ -53,6 +53,6 @@ df_all <- df_ocha_raw %>%
   )
 
 write_csv(
-  df_all,
+  df_ven,
   file_paths$save_path
 )

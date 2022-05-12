@@ -32,7 +32,8 @@ df_ocha_raw <- read_excel(
 #### DATA WRANGLING ####
 ########################
 
-df_cleaned <- df_ocha_raw %>%
+
+df_moz <- df_ocha_raw %>%
   transmute(
     adm0_name = "Mozambique",
     adm0_pcode = "MOZ",
@@ -73,10 +74,11 @@ df_cleaned <- df_ocha_raw %>%
       sector == "intersectoral",
       "intersectoral",
       "sectoral"
-    )
+    ),
+    pin = round(pin)
   )
 
 write_csv(
-  df_cleaned,
+  df_moz,
   file_paths$save_path
 )

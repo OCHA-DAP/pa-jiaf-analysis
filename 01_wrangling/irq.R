@@ -82,8 +82,7 @@ df_pcodes <- df_ocha_raw %>%
 ############################
 # and in the darkness bind them
 
-
-df_irq <- df_ocha %>%
+df_organized <- df_ocha %>%
   left_join(
     df_pcodes,
     by = "adm2_pcode"
@@ -109,17 +108,19 @@ df_irq <- df_ocha %>%
   )
 
 # deleting those areas that don't have any PiN for a specific group
-df_summarized <- df_irq %>%
+
+df_summarized <- df_organized %>%
   group_by(adm2_name, population_group) %>%
   summarise(tot_pin = sum(pin)) %>%
   filter(tot_pin != 0)
 
-df_cleaned <- df_irq %>% 
+
+df_irq <- df_organized %>% 
   filter(
     paste0(adm2_name, population_group) %in% paste0(df_summarized$adm2_name, df_summarized$population_group)
   )
 
 write_csv(
-  df_cleaned,
+  df_irq,
   file_paths$save_path
 )

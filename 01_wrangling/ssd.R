@@ -34,7 +34,7 @@ df_ocha_raw <- read_excel(
 
 # the column names are random, reorganizing the names
 # grouping the age categories to only child and adult
-df_ocha <- df_ocha_raw %>%
+df_organized <- df_ocha_raw %>%
   transmute(
     adm1_name = x1,
     adm1_pcode = x2,
@@ -168,7 +168,18 @@ df_ocha <- df_ocha_raw %>%
     )
   )
 
+# deleting those age-sex groups that don't have any PiN for a specific sectoral PiN
+df_summarized_age_sex <- df_organized %>%
+  group_by(sector, age_sex = paste0(age, sex)) %>%
+  summarize(tot_pin = sum(pin, na.rm = T)) %>%
+  filter(tot_pin != 0)
+
+df_ssd <- df_organized %>% 
+  filter(
+    paste0(sector, age, sex) %in% paste0(df_summarized_age_sex$sector, df_summarized_age_sex$age_sex)
+  ) 
+
 write_csv(
-  df_ocha,
+  df_ssd,
   file_paths$save_path
 )
