@@ -28,7 +28,6 @@ df_ocha_raw <- map_dfr(
     "Health",
     "Nutrition",
     "Protection",
-    "PRT",
     "CP",
     "GBV",
     "HLP",

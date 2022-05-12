@@ -100,7 +100,7 @@ df_col <- right_join(
       "intersectoral",
       "sectoral"
     )
-  )
+  ) %>% filter(sector != "san")
 
 write_csv(
   df_col,
