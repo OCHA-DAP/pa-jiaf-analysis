@@ -90,17 +90,27 @@ df_cleaned <- df %>% filter(row_number() > 2) %>%
     adm2_pcode = dist_cod_pc,
     population_group,
     weight,
-    list_indicators$indicator_code
-  ) %>%
-  mutate_at(list_indicators$indicator_code,
+    list_indicators$indicator_code,
+    n_indicators
+  ) %>% type_convert()
+
+#calculating the mean max of 50%
+df_cleaned$mean_max_50 <- 0
+for (i in 1:nrow(df_cleaned)) {
+  df_cleaned$mean_max_50[i] <-
+    round(mean(as.matrix(sort(
+      df_cleaned[i, list_indicators$indicator_code], decreasing = T
+    ))[1, 1:round(df_cleaned$n_indicators[i] / 2, 0)]), 0)
+}
+
+#recoding the severity scores to binary
+df_cleaned <- df_cleaned %>%
+  mutate_at(c(list_indicators$indicator_code, "mean_max_50"),
             ~ ifelse(. >= 3, 1, 0)) %>%
-  mutate(weight = as.numeric(weight),
-         hh_inneed = ifelse(sum_row(across(list_indicators$indicator_code)) > 0, 1, 0))
+  mutate(hh_inneed = ifelse(sum_row(across(list_indicators$indicator_code)) > 0, 1, 0))
 
-df_cleaned[, list_indicators$indicator_code] <-
-  lapply(df_cleaned[, list_indicators$indicator_code], FUN = as.numeric)
          
-
+#weighted percentages analysis
 df_svy <- as_survey_design(
   df_cleaned, 
   weights = weight
@@ -112,7 +122,7 @@ df_summarized <- df_svy %>%
     adm2_name
   ) %>%
   summarise_at(
-    .vars = c(list_indicators$indicator_code, "hh_inneed"),
+    .vars = c(list_indicators$indicator_code, "hh_inneed", "mean_max_50"),
     ~ survey_mean(., na.rm = T, vartype = "ci", level = 0.90)
     ) %>%
   select(-contains("low"), -contains("upp"))
@@ -125,7 +135,7 @@ df_pin <- df_summarized %>%
   #Al-Falluja's population for in camps was blank
   #checked from other files and it's 2,500
   pop_num = ifelse(pop_num == 0, 2500, pop_num)) %>%
-  mutate_at(c(list_indicators$indicator_code, "hh_inneed"),
+  mutate_at(c(list_indicators$indicator_code, "hh_inneed", "mean_max_50"),
             ~ round(. * pop_num)) %>%
   mutate(
     indicator_pin = max_row(across(list_indicators$indicator_code)),
@@ -160,8 +170,33 @@ df_pin <- df_pin %>%
   pop_num,
   hh_inneed,
   indicator_pin,
-  sectoral_pin
+  sectoral_pin,
+  mean_max_50_pin = mean_max_50
 )
+
+#reading aggregated hno pin
+file_dir <- file.path(
+  Sys.getenv("JIAF_DATA_DIR"),
+  "Data aggregated for analysis",
+  "irq_pins_2022.csv"
+)
+
+df_intersectoral <- read.csv(
+  file_dir
+) %>%
+  mutate(
+    population_group = case_when(population_group == "In-Camp-IDPs" ~ "idp_in_camp",
+                                 population_group == "Out-of-Camp-IDPs" ~ "idp_out_camp",
+                                 population_group == "Returnees" ~ "returnee") ,
+    
+  )%>% 
+  filter(sector == "itc") %>%
+  select(adm2_name, population_group, hno_intersectoral_pin = pin)
+
+df_pins <- left_join(df_pin,
+                     df_intersectoral,
+                     by = c("adm2_name", "population_group")) %>%
+  mutate(hno_intersectoral_pin = replace_na(hno_intersectoral_pin, 0))
 
 write_csv(
   df_pin,
@@ -170,20 +205,3 @@ write_csv(
     "iraq_household_data_analyzed"
   )
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
