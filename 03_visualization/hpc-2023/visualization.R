@@ -50,7 +50,7 @@ ggplot(df_pins, aes(
   theme_light()
 
 ggsave(file.path(save_path, "2022_hno_pin_totals.png"),
-       width = 3840, height = 2018, units = "px"
+  width = 3840, height = 2018, units = "px"
 )
 
 # Plot the contribs
@@ -80,13 +80,17 @@ ggplot(
     y = "Intersectoral PIN",
     x = "Country ISO3"
   ) +
-  theme(strip.text = element_text(
-    size = 5),
+  theme(
+    strip.text = element_text(
+      size = 5
+    ),
     axis.text = element_text(
-      size = 5))
+      size = 5
+    )
+  )
 
 ggsave(file.path(save_path, "2022_hno_pin_contributions.png"),
-       width = 3840, height = 2018, units = "px", scale = 0.7
+  width = 3840, height = 2018, units = "px", scale = 0.7
 )
 
 # difference with intersectoral
@@ -233,6 +237,7 @@ df_sectoral <- df_corr %>%
 
 ggsave(file.path(save_path, "2022_hno_pct_difference.png"),
   width = 3840, height = 2018, units = "px"
+)
 
 # plot these as min to max
 df_violin <- df_sectoral %>%

@@ -216,7 +216,6 @@ df_wash <- rbind(df_wash_residents, df_wash_idps)
 ########################
 
 # only two areas, extracted the pcodes manually
-
 df_organized <- rbind(
   df_ocha_raw,
   df_edu_raw,
@@ -260,22 +259,36 @@ df_organized <- rbind(
 # deleting those areas that don't have any PiN for a specific group
 df_summarized_pops <- df_organized %>%
   group_by(adm2_name, population_group) %>%
-  summarise(tot_pin = sum(pin, na.rm = T)) %>%
+  summarise(tot_pin = sum(pin, na.rm = TRUE)) %>%
   filter(tot_pin != 0)
 
-# deleting those administrations that don't have any PiN for a specific sectoral PiN
+# deleting those administrations that don't have any PiN for a specific sector
 df_summarized_administration <- df_organized %>%
   group_by(sector, administration) %>%
-  summarize(tot_pin = sum(pin, na.rm = T)) %>%
+  summarize(tot_pin = sum(pin, na.rm = TRUE)) %>%
   filter(tot_pin != 0)
 
-df_ukr <- df_organized %>% 
+df_ukr <- df_organized %>%
   filter(
-    paste0(adm2_name, population_group) %in% paste0(df_summarized_pops$adm2_name, df_summarized_pops$population_group),
-    paste0(sector, administration) %in% paste0(df_summarized_administration$sector, df_summarized_administration$administration)
-  ) 
+    paste0(
+      adm2_name,
+      population_group
+    ) %in% paste0(
+      df_summarized_pops$adm2_name,
+      df_summarized_pops$population_group
+    ),
+    paste0(
+      sector,
+      administration
+    ) %in% paste0(
+      df_summarized_administration$sector,
+      df_summarized_administration$administration
+    )
+  )
 
-abc <- df_ukr %>% filter(sector != "intersectoral") %>% group_by(adm1_name, administration, population_group) %>%
+abc <- df_ukr %>%
+  filter(sector != "intersectoral") %>%
+  group_by(adm1_name, administration, population_group) %>%
   summarize(pin = max(pin))
 
 write_csv(
