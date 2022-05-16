@@ -215,7 +215,7 @@ df_health <- read_excel(
 #### DATA WRANGLING ####
 ########################
 
-df_organized <-bind_rows(
+df_organized <- bind_rows(
   df_ocha_raw,
   df_fs,
   df_gbv,
@@ -244,7 +244,8 @@ df_organized <-bind_rows(
       sous_prefecture == "Batangafo" ~ "CF326",
       sous_prefecture %in% c("Nana-Boguila", "Nangha-Boguila") ~ "CF324",
       sous_prefecture == "Abba" ~ "CF224",
-      TRUE ~ adm2_pcode),
+      TRUE ~ adm2_pcode
+    ),
     sector = "intersectoral",
     population_group = pop_groupe,
     pin = round(pin, 0),
@@ -258,7 +259,7 @@ df_organized <-bind_rows(
 # deleting those areas that don't have any PiN for a specific group
 df_summarized_pops <- df_organized %>%
   group_by(adm1_name, population_group) %>%
-  summarise(tot_pin = sum(pin, na.rm = T)) %>%
+  summarise(tot_pin = sum(pin, na.rm = TRUE)) %>%
   filter(tot_pin != 0)
 
 df_car <- df_organized %>%
