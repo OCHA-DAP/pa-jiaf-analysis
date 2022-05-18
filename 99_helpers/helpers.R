@@ -17,7 +17,7 @@ get_paths <- function(country, country_name = NULL) {
   if (is.null(country_name)) {
     country_name <- country
   }
-
+  
   # iso3 for use in save path
   iso3 <- tolower( # nolint
     countrycode::countryname(
@@ -25,34 +25,42 @@ get_paths <- function(country, country_name = NULL) {
       destination = "iso3c"
     )
   )
-
+  
   data_dir <- Sys.getenv("JIAF_DATA_DIR")
-
+  
   # directory with ocha provided data
   ocha_dir <- file.path(
     data_dir,
     "Data from country offices - OCHA",
     country
   )
-
+  
   # directory with cluster provided data
   cluster_dir <- file.path(
     data_dir,
     "Data from country offices - Clusters",
     country
   )
-
+  
   # file path to save pin data
   save_path <- file.path(
     data_dir,
     aggregated_data_dir,
     glue::glue("{iso3}_pins_2022.csv")
   )
-
+  
+  # file path to save hh data
+  save_path_hh_data <- file.path(
+    data_dir,
+    aggregated_data_dir,
+    glue::glue("hh_data/{iso3}_hh_data_2022.csv")
+  )
+  
   list(
     ocha_dir = ocha_dir,
     cluster_dir = cluster_dir,
-    save_path = save_path
+    save_path = save_path,
+    save_path_hh_data = save_path_hh_data
   )
 }
 
