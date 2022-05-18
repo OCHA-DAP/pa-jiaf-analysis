@@ -45,7 +45,7 @@ df_cleaned <- df %>%
   clean_names() %>% 
   type_convert() %>%
   mutate(
-    hh_id = 1:nrow(.)
+    hh_id = paste0("IRQ", 1:nrow(.))
   ) %>%
   pivot_longer(cols = matches("^s[0-9]"),
                names_to = "indicator",

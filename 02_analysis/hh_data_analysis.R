@@ -22,6 +22,8 @@ read_in_disagg <- function(fp) {
       skip = 4
     ) %>%
       transmute(
+        adm0_name = "Iraq",
+        adm0_pcode = "IRQ",
         adm1_pcode = admin1Pcode,
         adm2_pcode = admin2Pcode,
         adm1_name = gov_name,
@@ -53,6 +55,7 @@ ocha_fp <- file.path(
 )
 
 df_irq_pops <- read_in_disagg(ocha_fp) %>%
+  mutate(pop_num = ifelse(population_group == "In-Camp-IDPs" & adm2_name == "Al-Falluja", 2500, pop_num)) %>%
   filter(pop_num != 0 & adm1_name != "Total")
 
 df <- map_dfr(list.files(paste0(file_paths$input_dir, "/hh_data"), full.names = TRUE), read_csv)
@@ -170,7 +173,8 @@ hh_summarized <- hh_scoring_method %>%
          "population_group")
   ) %>%
   mutate(
-    pin = round(percentage * pop_num)
+    value = round(percentage * pop_num),
+    calculation_level = "household indicators' severity scores of indicators at household level"
   )
 
 ####################################
@@ -188,15 +192,15 @@ area_summarized <- df %>%
   left_join(df_irq_pops,
             by = c("adm2_name",
                    "population_group")) %>%
-  mutate(pin = round(percentage * pop_num)) 
+  mutate(value = round(percentage * pop_num)) 
 
 area_pin_from_sector <- area_summarized %>%
   group_by(adm2_name,
            population_group,
            sector) %>%
   summarize(
-    area_pin_sector_max = max(pin, na.rm = TRUE),
-    area_pin_sector_mean = round(mean(pin, na.rm = TRUE))
+    area_pin_sector_max = max(value, na.rm = TRUE),
+    area_pin_sector_mean = round(mean(value, na.rm = TRUE))
   ) %>%
   group_by(
     adm2_name,
@@ -211,8 +215,8 @@ area_pin_from_indicator <- area_summarized %>%
   group_by(adm2_name,
            population_group) %>%
   summarize(
-    area_pin_indicator_max = max(pin, na.rm = TRUE),
-    area_pin_indicator_mean = round(mean(pin, na.rm = TRUE))
+    area_pin_indicator_max = max(value, na.rm = TRUE),
+    area_pin_indicator_mean = round(mean(value, na.rm = TRUE))
   )
 
 area_pin <-
@@ -223,11 +227,14 @@ area_pin <-
   ) %>%
   pivot_longer(
     cols = matches("^area"),
-    values_to = "pin",
+    values_to = "value",
     names_to = "aggregation_method"
   ) %>%
   filter(
-    !is.infinite(pin) & !is.nan(pin)
+    !is.infinite(value) & !is.nan(value)
+  ) %>%
+  mutate(
+    calculation_level = "indicators' or sectors' PiN at area level"
   )
 
 df_hno_pin <- read.csv(paste0(file_paths$input_dir, "/irq_pins_2022.csv")) %>%
@@ -237,17 +244,69 @@ df_hno_pin <- read.csv(paste0(file_paths$input_dir, "/irq_pins_2022.csv")) %>%
    population_group
  ) %>%
   summarize(
-    pin = max(pin, na.rm = TRUE)
+    value = max(pin, na.rm = TRUE)
   ) %>% 
   mutate(
-    aggregation_method = "hno_sectoral_max"
+    aggregation_method = "reported",
+    calculation_level = "Max of sectoral PiNs (calculated by clusters) at area level"
   )
 
 pin_all <- rbind(
   area_pin,
-  select(hh_summarized, adm2_name, population_group, aggregation_method, pin),
+  select(hh_summarized, adm2_name, population_group, aggregation_method, value, calculation_level),
   df_hno_pin
-)
+) 
+
+#filtering the population to only area/population groups that have PiNs
+df_irq_pops <- df_irq_pops %>%
+  mutate(value = pop_num) %>%
+  filter(
+    paste0(adm2_name, population_group) %in% paste0(pin_all$adm2_name, pin_all$population_group)
+  ) %>%
+  mutate(aggregation_method = "Total Targetted Population",
+         calculation_level = "Total Targetted Population") %>%
+  select(
+    aggregation_method,
+    calculation_level,
+    adm2_name,
+    population_group,
+    value
+  )
+
+pin_all <- pin_all %>%
+  rbind(df_irq_pops) %>%
+  group_by(
+    adm0_name = "Iraq",
+    aggregation_method
+  ) %>%
+  summarize(
+    value = sum(value, na.rm = T)
+  )
+# 
+# bar_chart <- ggplot(pin_all, aes(
+#   fill = fct_rev(aggregation_method), y = value, x = reorder(aggregation_method, +value),
+#   label = paste0(round(value/1000000, 2), "M")
+# )) +
+#   geom_col() +
+#   geom_text(position = position_dodge(width = .3),hjust=-.08, size = 1.8)+
+#   coord_flip() +
+#   labs(
+#     fill = "Methodology",
+#     x = "Country",
+#     y = "PIN"
+#   ) +
+#   theme_light() +
+#   scale_y_continuous(label = comma)+
+#   scale_fill_discrete() +
+#   theme(legend.position = "none")
+#   
+# ggsave(file.path(
+#   file_paths$output_dir,
+#   "2022_hh_data_aggregation.png"
+# ),
+# width = 1920, height = 1080, units = "px", plot = bar_chart
+# )
+
 
 write.csv(
   pin_all,
