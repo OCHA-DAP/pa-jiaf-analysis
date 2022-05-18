@@ -7,7 +7,7 @@ file_paths <- get_paths_analysis()
 #### WRANGLING ####
 ###################
 
-df <- map_dfr(list.files(file_paths$input_dir, full.names = TRUE), read_csv) %>%
+df <- map_dfr(list.files(file_paths$input_dir, full.names = TRUE, pattern = "pin"), read_csv) %>%
   select(
     -matches("adm[0-9]{1}_[a-z]{2}$")
   ) %>%

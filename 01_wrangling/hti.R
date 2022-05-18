@@ -88,7 +88,7 @@ df_cluster_wash <- read_excel(
       pcode_com
     ),
     sector = "wash",
-    score = as.numeric(x56),
+    severity = as.numeric(x56),
     pin = as.numeric(x53),
     source = "ocha",
     sector_general = "sectoral"
