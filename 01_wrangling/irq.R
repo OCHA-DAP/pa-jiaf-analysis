@@ -82,7 +82,6 @@ df_pcodes <- df_ocha_raw %>%
 ############################
 # and in the darkness bind them
 
-
 df_organized <- df_ocha %>%
   left_join(
     df_pcodes,
@@ -113,9 +112,15 @@ df_summarized <- df_organized %>%
   summarise(tot_pin = sum(pin)) %>%
   filter(tot_pin != 0)
 
-df_irq <- df_organized %>% 
+df_irq <- df_organized %>%
   filter(
-    paste0(adm2_name, population_group) %in% paste0(df_summarized$adm2_name, df_summarized$population_group)
+    paste0(
+      adm2_name,
+      population_group
+    ) %in% paste0(
+      df_summarized$adm2_name,
+      df_summarized$population_group
+    )
   )
 
 write_csv(
