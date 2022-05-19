@@ -2,11 +2,38 @@ rm(list=ls(all=T))
 library(tidyverse)
 library(readxl)
 library(janitor)
-library(srvyr)
 library(expss)
 
 # helper functions to get paths
 source(here::here("99_helpers", "helpers.R"))
+
+###################
+#### FUNCTIONS ####
+###################
+
+#' @importFrom dplyr %>%
+read_in_disagg <- function(fp) {
+  groups <- c("In-Camp-IDPs", "Out-of-Camp-IDPs", "Returnees")
+  purrr::map_dfr(
+    groups,
+    ~ readxl::read_excel(
+      fp,
+      sheet = paste0(.x, "-District"),
+      skip = 4
+    ) %>%
+      transmute(
+        adm0_name = "Iraq",
+        adm0_pcode = "IRQ",
+        adm1_pcode = admin1Pcode,
+        adm2_pcode = admin2Pcode,
+        adm1_name = gov_name,
+        adm2_name = dist_name,
+        population_group = .x,
+        pop_num
+      )
+  )
+}
+
 
 ###################
 #### DATA DIRS ####
@@ -28,6 +55,19 @@ df <- read_excel(
   sheet = "data",
   col_names = FALSE
 )
+
+population_fp <- file.path(
+  file_paths$ocha_dir,
+  paste(
+    "Iraq 2022 HNO Final Intersectoral",
+    "& Cluster PIN Estimates - Updated 20211129.xlsx"
+  )
+)
+
+df_irq_pops <- read_in_disagg(population_fp) %>%
+  mutate(pop_num = ifelse(population_group == "In-Camp-IDPs" & adm2_name == "Al-Falluja", 2500, pop_num)) %>%
+  filter(pop_num != 0 & adm1_name != "Total") %>%
+  select(adm2_name, population_group, pop_num)
 
 #list of indicators
 list_indicators <- df %>% 
@@ -52,6 +92,7 @@ df_cleaned <- df %>%
                values_to = "severity",
                values_drop_na = TRUE) %>%
   left_join(list_indicators, by=c("indicator" = "indicator_code")) %>%
+  left_join(df_irq_pops, by = c("dist_cod" = "adm2_name", "population_group")) %>%
   transmute(
     hh_id,
     adm0_name = "IRAQ",
@@ -64,7 +105,11 @@ df_cleaned <- df %>%
       population_group == "idp_in_camp" ~ "In-Camp-IDPs",
       population_group == "idp_out_camp" ~ "Out-of-Camp-IDPs",
       population_group == "returnee" ~ "Returnees"
-    ), 
+    ),
+    target_population = df_irq_pops$pop_num[match(
+      paste0(adm2_name, population_group),
+      paste0(df_irq_pops$adm2_name, df_irq_pops$population_group)
+    )],
     sector = case_when(
       indicator %in% c("s01", "s11", "s12", "s13") ~ "protection",
       indicator == "s02" ~ "education",
@@ -82,8 +127,7 @@ df_cleaned <- df %>%
     weight
   )
 
-write.csv(
+write_csv(
   df_cleaned,
-  file_paths$save_path_hh_data,
-  row.names = FALSE
+  file_paths$save_path_hh_data
 )
