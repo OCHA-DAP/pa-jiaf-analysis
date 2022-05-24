@@ -56,6 +56,7 @@ df_mli <- df_ocha_raw %>%
     adm1_pcode = pcode_reg,
     adm2_name = cercle,
     adm2_pcode = pcode_cer,
+    population_group = types_population,
     sector,
     pin = round(pin),
     source = "ocha",
