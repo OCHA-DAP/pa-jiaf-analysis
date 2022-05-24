@@ -26,7 +26,7 @@ df_ocha_raw <- read_excel(
   sheet = "Analyse_InterSect_PIN"
 ) %>%
   clean_names() %>%
-  drop_na(phases_de_l_ipc)
+  drop_na(types_population)
 
 ########################
 #### DATA WRANGLING ####
