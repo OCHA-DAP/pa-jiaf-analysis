@@ -72,7 +72,7 @@ df_organized <- df_ocha_raw %>%
     age,
     sex = sexe,
     population_group = gsub("n_", "", population_group),
-    pin = value,
+    pin = replace_na(value, 0),
     source = "ocha",
     sector_general = ifelse(
       sector == "intersectoral",
@@ -84,20 +84,26 @@ df_organized <- df_ocha_raw %>%
 # deleting those areas that don't have any PiN for a specific group
 df_summarized_pops <- df_organized %>%
   group_by(adm2_name, population_group) %>%
-  summarise(tot_pin = sum(pin, na.rm = T)) %>%
+  summarise(tot_pin = sum(pin, na.rm = TRUE)) %>%
   filter(tot_pin != 0)
 
-# deleting those age-sex groups that don't have any PiN for a specific sectoral PiN
+# deleting those age-sex groups that don't have any PiN for a specific sector
 df_summarized_age_sex <- df_organized %>%
   group_by(sector, age_sex = paste0(age, sex)) %>%
-  summarize(tot_pin = sum(pin, na.rm = T)) %>%
+  summarize(tot_pin = sum(pin, na.rm = TRUE)) %>%
   filter(tot_pin != 0)
 
-df_cmr <- df_organized %>% 
+df_cmr <- df_organized %>%
   filter(
-    paste0(adm2_name, population_group) %in% paste0(df_summarized_pops$adm2_name, df_summarized_pops$population_group),
-    paste0(sector, age, sex) %in% paste0(df_summarized_age_sex$sector, df_summarized_age_sex$age_sex)
-  ) 
+    paste0(adm2_name, population_group) %in% paste0(
+      df_summarized_pops$adm2_name,
+      df_summarized_pops$population_group
+    ),
+    paste0(sector, age, sex) %in% paste0(
+      df_summarized_age_sex$sector,
+      df_summarized_age_sex$age_sex
+    )
+  )
 
 write_csv(
   df_cmr,

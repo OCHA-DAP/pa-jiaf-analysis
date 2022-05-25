@@ -41,35 +41,46 @@ get_paths <- function(country, country_name = NULL) {
     "Data from country offices - Clusters",
     country
   )
-  
-  # file path to save pin data
+
+  fn <- glue::glue("{iso3}_pins_2022.csv")
+
+  # file path to save sectoral pin data
   save_path <- file.path(
     data_dir,
     aggregated_data_dir,
-    glue::glue("{iso3}_pins_2022.csv")
+    "sectoral_pins",
+    fn
   )
-  
+
+  # file path to save indicator pin data
+  save_path_indicator <- file.path(
+    data_dir,
+    aggregated_data_dir,
+    "indicator_pins",
+    fn
+  )
+
   # file path to save hh data
   save_path_hh_data <- file.path(
     data_dir,
     aggregated_data_dir,
-    glue::glue("hh_data/{iso3}_hh_data_2022.csv")
+    "hh_data",
+    fn
   )
-  
+
   list(
     ocha_dir = ocha_dir,
     cluster_dir = cluster_dir,
     save_path = save_path,
-    save_path_hh_data = save_path_hh_data
+    save_path_hh_data = save_path_hh_data,
+    save_path_indicator = save_path_indicator
   )
 }
 
 get_paths_analysis <- function() {
-
-  # TODO: Make name of this a constant
   data_dir <- Sys.getenv("JIAF_DATA_DIR")
 
-  input_dir <- file.path(
+  agg_dir <- file.path(
     data_dir,
     aggregated_data_dir
   )
@@ -78,5 +89,11 @@ get_paths_analysis <- function() {
     data_dir,
     "Data analyzed"
   )
-  list(input_dir = input_dir, output_dir = output_dir)
+
+  list(
+    input_dir = file.path(agg_dir, "sectoral_pins"),
+    input_hh_dir = file.path(agg_dir, "hh_data"),
+    input_indicator_dir = file.path(agg_dir, "indicator_pins"),
+    output_dir = output_dir
+  )
 }

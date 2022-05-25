@@ -26,7 +26,7 @@ df_ocha_raw <- read_excel(
   sheet = "Analyse_InterSect_PIN"
 ) %>%
   clean_names() %>%
-  drop_na(phases_de_l_ipc)
+  drop_na(types_population)
 
 ########################
 #### DATA WRANGLING ####
@@ -56,6 +56,7 @@ df_mli <- df_ocha_raw %>%
     adm1_pcode = pcode_reg,
     adm2_name = cercle,
     adm2_pcode = pcode_cer,
+    population_group = types_population,
     sector,
     pin = round(pin),
     source = "ocha",

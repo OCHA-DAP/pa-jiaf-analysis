@@ -96,11 +96,12 @@ df_col <- right_join(
     pin = round(replace_na(pin, 0), 0),
     source = "ocha",
     sector_general = ifelse(
-      sector == "intersectoral",
+      sector == "intersectorial",
       "intersectoral",
       "sectoral"
     )
-  ) %>% filter(sector != "san")
+  ) %>%
+  filter(sector != "san")
 
 write_csv(
   df_col,

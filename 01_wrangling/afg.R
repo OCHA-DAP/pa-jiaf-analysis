@@ -134,26 +134,33 @@ df_organized <- df_combined_all %>%
     pin = number_inneed,
     source,
     sector_general
-  ) 
+  )
 
 # deleting those areas that don't have any PiN for a specific group
 df_summarized_pops <- df_organized %>%
   group_by(adm1_name, population_group) %>%
-  summarise(tot_pin = sum(pin, na.rm = T)) %>%
+  summarise(tot_pin = sum(pin, na.rm = TRUE)) %>%
   filter(tot_pin != 0)
 
-# deleting those age-sex groups that don't have any PiN for a specific sectoral PiN
+# deleting those age-sex groups that don't have any PiN for a specific sector
 df_summarized_age_sex <- df_organized %>%
   group_by(sector, age_gender_group) %>%
-  summarize(tot_pin = sum(pin, na.rm = T)) %>%
+  summarize(tot_pin = sum(pin, na.rm = TRUE)) %>%
   filter(tot_pin != 0)
 
-df_afg <- df_organized %>% 
+df_afg <- df_organized %>%
   filter(
-    paste0(adm1_name, population_group) %in% paste0(df_summarized_pops$adm1_name, df_summarized_pops$population_group),
-    paste0(sector, age_gender_group) %in% paste0(df_summarized_age_sex$sector, df_summarized_age_sex$age_gender_group)
+    paste0(adm1_name, population_group) %in% paste0(
+      df_summarized_pops$adm1_name,
+      df_summarized_pops$population_group
+    ),
+    paste0(sector, age_gender_group) %in% paste0(
+      df_summarized_age_sex$sector,
+      df_summarized_age_sex$age_gender_group
+    ),
+    population_group != "total"
   ) %>%
-  separate(age_gender_group, into = c("age", "sex")) %>%
+  separate(age_gender_group, into = c("sex", "age")) %>%
   mutate(
     pin = round(pin, 0)
   )

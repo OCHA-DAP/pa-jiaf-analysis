@@ -31,11 +31,11 @@ df_ocha_raw <- read_excel(
 #### DATA WRANGLING ####
 ########################
 
-#renaming the columns with the same name to their cluster name
-#adm1 pcodes can be extracted from adm2 pcodes
+# renaming the columns with the same name to their cluster name
+# adm1 pcodes can be extracted from adm2 pcodes
 df_yem <- df_ocha_raw %>%
   mutate(
-    rmms = sum_row(refugee, migrant, na.rm = T),
+    rmms = sum_row(refugee, migrant, na.rm = TRUE),
     intersectoral = jiaf_refugee_migrant,
     protection = total_pi_n_64,
     wash = total_pi_n_66,
@@ -50,7 +50,7 @@ df_yem <- df_ocha_raw %>%
     cols = rmms:health,
     names_to = "sector",
     values_to = "pin"
-  ) %>% 
+  ) %>%
   group_by(
     x2,
     pcode,
@@ -58,23 +58,27 @@ df_yem <- df_ocha_raw %>%
     sector
   ) %>%
   summarize(
-    pin = sum(pin, na.rm = T)
+    pin = sum(pin, na.rm = TRUE),
+    .groups = "drop"
   ) %>%
   transmute(
-    adm0_en = "Yemen",
+    adm0_name = "Yemen",
     adm0_pcode = "YEM",
     adm1_name = x2,
     adm1_pcode = gsub("[0-9]{2}$", "", pcode),
-    amd2_name = district,
+    adm2_name = district,
     adm2_pcode = pcode,
     sector,
     pin = round(replace_na(pin, 0)),
     source = "ocha",
-    sector_general = ifelse(sector == "intersectoral", "intersectoral", "sectoral")
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
   )
 
 write_csv(
   df_yem,
   file_paths$save_path
 )
-

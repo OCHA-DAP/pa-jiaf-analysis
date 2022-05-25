@@ -284,17 +284,10 @@ df_ukr <- df_organized %>%
       df_summarized_administration$sector,
       df_summarized_administration$administration
     )
+  ) %>%
+  filter(
+    population_group != "total"
   )
-
-abc <- df_ukr %>%
-  filter(sector != "intersectoral") %>%
-  group_by(adm1_name, administration, population_group) %>%
-  summarize(pin = max(pin))
-
-abc <- df_ukr %>%
-  filter(sector != "intersectoral") %>%
-  group_by(adm1_name, administration, population_group) %>%
-  summarize(pin = max(pin))
 
 write_csv(
   df_ukr,

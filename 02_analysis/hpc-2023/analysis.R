@@ -7,10 +7,14 @@ file_paths <- get_paths_analysis()
 #### WRANGLING ####
 ###################
 
-df <- map_dfr(list.files(file_paths$input_dir, full.names = TRUE), read_csv) %>%
-  select(
-    -matches("adm[0-9]{1}_[a-z]{2}$")
-  ) %>%
+df <- map_dfr(
+  list.files(
+    file_paths$input_dir,
+    pattern = ".csv",
+    full.names = TRUE
+  ),
+  read_csv
+) %>%
   mutate(
     sector_group = ifelse(
       source == "cluster",
@@ -204,7 +208,12 @@ cluster_df <-
         "refugee response",
         "migrants"
       ) ~ "displacement_status",
-      sector %in% c("inter_sectoral", "intersectorial", "itc") ~ "intersectoral"
+      sector %in% c(
+        "inter_sectoral",
+        "intersectorial",
+        "itc"
+      ) ~ "intersectoral",
+      TRUE ~ sector
     )
   ) %>%
   filter(sector != "intersectoral")

@@ -118,7 +118,7 @@ df_organized <-
     population_group,
     sector = ifelse(sector == "inter_sectoral", "intersectoral", sector),
     pin = round(pin),
-    severity = ifelse(pin == 0 , 1, score),
+    severity = ifelse(pin == 0, 1, score),
     source = "ocha",
     sector_general = ifelse(
       sector == "intersectoral",
@@ -138,15 +138,16 @@ df_organized <-
 # deleting those areas that don't have any PiN for a specific group
 df_summarized_pops <- df_organized %>%
   group_by(adm2_name, population_group) %>%
-  summarise(tot_pin = sum(pin, na.rm = T)) %>%
+  summarise(tot_pin = sum(pin, na.rm = TRUE)) %>%
   filter(tot_pin != 0)
 
-df_som <- df_organized %>% 
+df_som <- df_organized %>%
   filter(
     paste0(adm2_name, population_group) %in% paste0(
       df_summarized_pops$adm2_name,
       df_summarized_pops$population_group
-    )
+    ),
+    population_group != "total"
   )
 
 write_csv(

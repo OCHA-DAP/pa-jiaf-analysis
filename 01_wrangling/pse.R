@@ -95,15 +95,16 @@ df_pse <- df_ocha %>%
     adm0_name = "oPt",
     adm0_pcode = "PSE",
     adm1_name = adm1_en,
-    adm1_pcode = adm1_en,    
+    adm1_pcode = adm1_en,
     adm2_name = adm2_en,
-    adm2_pcode = adm1_en,
-    sector, 
+    adm2_pcode = adm2_en,
+    sector,
     pin = round(pin),
     source = "ocha",
     sector_general = ifelse(sector == "intersectoral",
-                            "intersectoral",
-                            "sectoral")
+      "intersectoral",
+      "sectoral"
+    )
   )
 
 write_csv(
