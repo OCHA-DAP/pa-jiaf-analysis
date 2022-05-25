@@ -1,4 +1,3 @@
-rm(list=ls(all=T))
 library(tidyverse)
 library(readxl)
 library(janitor)
@@ -45,13 +44,16 @@ read_in_disagg <- function(fp) {
 
 file_paths <- get_paths("Iraq")
 
-############################
-#### MSNA Indicator DATA ####
-############################
+#############################
+#### MSNA INDICATOR DATA ####
+#############################
 
 ocha_fp <- file.path(
   file_paths$ocha_dir,
-    "Iraq 2022 HNO MCNA Intersectoral Composites and Aggregation Template [Working].xlsx"
+  paste0(
+    "Iraq 2022 HNO MCNA Intersectoral Composites",
+    "and Aggregation Template [Working].xlsx"
+  )
 )
 
 df <- read_excel(
@@ -82,25 +84,35 @@ df_irq_pops <- read_in_disagg(population_fp) %>%
   filter(target_population != 0 & adm1_name != "Total") %>%
   select(adm2_name, population_group, target_population)
 
-df_cleaned <- df %>% 
+###########################
+#### CREATE CLEAN FILE ####
+###########################
+
+df_cleaned <- df %>%
   mutate(
-    hh_id = paste0("IRQ", 1:nrow(.)),
+    hh_id = paste0("IRQ", row_number()),
     population_group = case_when(
       population_group == "idp_in_camp" ~ "idp_in",
       population_group == "idp_out_camp" ~ "idp_out",
       population_group == "returnee" ~ "ret"
     )
   ) %>%
-  pivot_longer(cols = matches("^s[0-9]"),
-               names_to = "indicator",
-               values_to = "severity",
-               values_drop_na = TRUE) %>%
-  left_join(df_irq_pops, by = c("dist_cod" = "adm2_name", "population_group")) %>%
+  pivot_longer(
+    cols = matches("^s[0-9]"),
+    names_to = "indicator",
+    values_to = "severity",
+    values_drop_na = TRUE
+  ) %>%
+  left_join(
+    df_irq_pops,
+    by = c("dist_cod" = "adm2_name", "population_group")
+  ) %>%
   transmute(
-    hh_id,
     adm0_name = "Iraq",
+    adm0_pcode = "IRQ",
     area = dist_cod,
     population_group,
+    hh_id,
     target_population,
     sector = case_when(
       indicator %in% c("s01", "s11", "s12", "s13") ~ "protection",

@@ -1,4 +1,3 @@
-rm(list = ls(all = T))
 library(tidyverse)
 library(readxl)
 library(janitor)
@@ -17,11 +16,14 @@ file_paths <- get_paths("Somalia")
 #### MSNA Indicator DATA ####
 ############################
 
-ocha_fp <- file.path(file_paths$ocha_dir,
-                     "Copy of SOM_2021_Intersectoral PiN Estimate.xlsx")
+ocha_fp <- file.path(
+  file_paths$ocha_dir,
+  "Copy of SOM_2021_Intersectoral PiN Estimate.xlsx"
+)
 
 df <- read_excel(ocha_fp,
-                 sheet = "B-HH_data") %>%
+  sheet = "B-HH_data"
+) %>%
   filter(row_number() > 1) %>%
   clean_names() %>%
   type_convert() %>%
@@ -29,14 +31,17 @@ df <- read_excel(ocha_fp,
     -key
   )
 
-names(df) <- c("hh_id", 
-               "area",
-               "population_group",
-               1:14)
+names(df) <- c(
+  "hh_id",
+  "area",
+  "population_group",
+  1:14
+)
 
 df_som_pops <- read_excel(ocha_fp,
-                          sheet = "E-REF_HNO_pop",
-                          skip = 5) %>%
+  sheet = "E-REF_HNO_pop",
+  skip = 5
+) %>%
   clean_names() %>%
   transmute(
     area = district,
@@ -53,7 +58,7 @@ df_som_pops <- read_excel(ocha_fp,
 
 df_cleaned <- df %>%
   mutate(
-    hh_id = paste0("SOM", 1:nrow(.)),
+    hh_id = paste0("SOM", row_number()),
     population_group = case_when(
       population_group == "IDP" ~ "idp",
       population_group == "HC" ~ "res"
@@ -88,9 +93,11 @@ df_cleaned <- df %>%
     indicator,
     severity,
     weight = 1
-  ) %>% 
-  #excluding Zdummy district which is not available in many places
+  ) %>%
+  # excluding Zdummy district which is not available in many places
   filter(!is.na(target_population))
 
-write_csv(df_cleaned,
-          file_paths$save_path_hh_data)
+write_csv(
+  df_cleaned,
+  file_paths$save_path_hh_data
+)
