@@ -67,3 +67,22 @@ df_indicators %>%
       "2022_indicator_pins.csv"
     )
   )
+
+# HH Data
+
+df_hh_data <- map_dfr(
+  list.files(
+    file_paths$input_hh_dir,
+    pattern = ".csv",
+    full.names = TRUE
+  ),
+  read_csv
+)
+
+df_hh_data %>%
+  write_csv(
+    file.path(
+      file_paths$agg_dir,
+      "2022_hh_data.csv"
+    )
+  )

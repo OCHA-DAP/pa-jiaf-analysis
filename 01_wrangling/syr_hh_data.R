@@ -38,7 +38,7 @@ df <- read_excel(ocha_fp,
   filter(!is.na(hh_id))
 
 names(df) <- c(
-  "hh_id", "area",
+  "hh_id", "adm3_pcode",
   "population_group",
   1:19,
   "weight"
@@ -51,7 +51,13 @@ df_syr_pops <- read_excel(ocha_fp,
   clean_names() %>%
   transmute(
     adm0_name = "Syria",
-    area = admin3pcode,
+    adm0_pcode = "SYR",
+    adm1_name = admin1name_en,
+    adm1_pcode = admin1pcode,
+    adm2_name = admin2name_en,
+    adm2_pcode = admin2pcode,
+    adm3_name = admin3name_en,
+    adm3_pcode = admin3pcode,
     res = final_est_of_res_pop_aug_2021,
     ret = final_est_of_spontaneous_idp_returnees_jan_aug_2021,
     idp_out = final_est_of_total_id_ps_aug_2021 -
@@ -59,7 +65,7 @@ df_syr_pops <- read_excel(ocha_fp,
     idp_in = final_est_of_id_ps_in_sites_aug_2021_included_in_the_total_id_ps
   ) %>%
   pivot_longer(
-    cols = -c(adm0_name, area),
+    cols = !matches("^adm"),
     values_to = "target_population",
     names_to = "population_group"
   ) %>%
@@ -81,11 +87,17 @@ df_cleaned <- df %>%
     values_to = "severity",
     values_drop_na = TRUE
   ) %>%
-  left_join(df_syr_pops, by = c("area", "population_group")) %>%
+  left_join(df_syr_pops, by = c("adm3_pcode", "population_group")) %>%
   transmute(
     hh_id,
-    adm0_name = "Syria",
-    area,
+    adm0_name,
+    adm0_pcode,
+    adm1_name,
+    adm1_pcode,
+    adm2_name,
+    adm2_pcode,
+    adm3_name,
+    adm3_pcode,
     population_group,
     target_population = round(target_population),
     sector = case_when(

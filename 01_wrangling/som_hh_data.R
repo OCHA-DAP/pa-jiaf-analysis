@@ -33,7 +33,7 @@ df <- read_excel(ocha_fp,
 
 names(df) <- c(
   "hh_id",
-  "area",
+  "adm2_name",
   "population_group",
   1:14
 )
@@ -44,17 +44,35 @@ df_som_pops <- read_excel(ocha_fp,
 ) %>%
   clean_names() %>%
   transmute(
-    area = district,
+    adm2_name = district,
     idp = of_whom_id_ps,
     res = of_whom_non_displaced
   ) %>%
   pivot_longer(
-    cols = -area,
+    cols = -adm2_name,
     values_to = "target_population",
     names_to = "population_group",
     values_drop_na = TRUE
   ) %>%
   filter(target_population > 0)
+
+df_pcodes <- read_excel(
+  file.path(
+    file_paths$ocha_dir,
+    "som-administrative-division-names-and-p-codes.xlsx"
+  ),
+  sheet = "Admin2"
+) %>%
+  select(
+    adm1_pcode = admin1Pcode,
+    adm1_name = admin1Name_en,
+    adm2_pcode = admin2Pcode,
+    adm2_name = admin2Name_en,
+  )
+
+########################
+#### DATA WRANGLING ####
+########################
 
 df_cleaned <- df %>%
   mutate(
@@ -62,7 +80,14 @@ df_cleaned <- df %>%
     population_group = case_when(
       population_group == "IDP" ~ "idp",
       population_group == "HC" ~ "res"
-    )
+    ),
+    #some names of adm2 are not aligned with OCHA names
+    adm2_name = gsub("_", " ", adm2_name),
+    adm2_name = case_when(adm2_name == "Baidoa" ~ "Baydhaba",
+                          adm2_name == "Kismayo" ~ "Kismaayo",
+                          adm2_name == "Bandarbayla" ~ "Bandarbeyla",
+                          adm2_name == "Garowe" ~ "Garoowe",
+                          TRUE ~ adm2_name)
   ) %>%
   pivot_longer(
     cols = matches("^[0-9]"),
@@ -70,11 +95,16 @@ df_cleaned <- df %>%
     values_to = "severity",
     values_drop_na = TRUE
   ) %>%
-  left_join(df_som_pops, by = c("area", "population_group")) %>%
+  left_join(df_som_pops, by = c("adm2_name", "population_group")) %>%
+  left_join(df_pcodes, by = "adm2_name") %>%
   transmute(
     hh_id,
     adm0_name = "Somalia",
-    area,
+    adm0_pcode = "SOM",
+    adm1_name,
+    adm1_pcode,
+    adm2_name,
+    adm2_pcode,
     population_group,
     target_population = round(target_population),
     sector = case_when(

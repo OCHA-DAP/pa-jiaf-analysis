@@ -17,8 +17,7 @@ file_paths <- get_paths_analysis()
 #### HH Aggregation Method ####
 ###############################
 
-df <-
-  map_dfr(list.files(file.path(file_paths$input_dir, "hh_data"), full.names = TRUE), read_csv)
+df <- read_csv(file.path(file_paths$agg_dir, "2022_hh_data.csv"))
 
 hh_scoring_method_1 <- df %>%
   group_by(hh_id) %>%
@@ -91,7 +90,9 @@ remove(
 
 hh_summarized <- hh_scoring_method %>%
   group_by(adm0_name,
-           area,
+           adm1_name,
+           adm2_name,
+           adm3_name, 
            population_group,
            target_population,
            aggregation_method) %>%
@@ -107,7 +108,9 @@ hh_summarized <- hh_scoring_method %>%
 
 area_summarized <- df %>%
   group_by(adm0_name,
-           area,
+           adm1_name,
+           adm2_name,
+           adm3_name,
            population_group,
            target_population,
            sector,
@@ -118,18 +121,23 @@ area_summarized <- df %>%
 
 area_pin_from_sector <- area_summarized %>%
   group_by(adm0_name,
-           area,
+           adm1_name,
+           adm2_name,
+           adm3_name,
            population_group,
            sector) %>%
   summarize(area_pin_sector_mean = round(mean(value, na.rm = TRUE))) %>%
   group_by(adm0_name,
-           area,
-           population_group) %>%
+           adm1_name,
+           adm2_name,
+           adm3_name,           population_group) %>%
   summarize(area_pin_sector_mean = max(area_pin_sector_mean, na.rm = TRUE))
 
 area_pin_from_indicator <- area_summarized %>%
   group_by(adm0_name,
-           area,
+           adm1_name,
+           adm2_name,
+           adm3_name,
            population_group) %>%
   summarize(
     area_pin_indicator_max = max(value, na.rm = TRUE),
@@ -140,7 +148,11 @@ area_pin <-
   left_join(
     area_pin_from_indicator,
     area_pin_from_sector,
-    by = c("adm0_name", "area", "population_group")
+    by = c("adm0_name", 
+           "adm1_name",
+           "adm2_name",
+           "adm3_name", 
+           "population_group")
   ) %>%
   pivot_longer(
     cols = matches("^area_pin"),
@@ -215,7 +227,9 @@ df_som_cluster_pin <- df_som_ocha_pin %>%
 #filtering the population to only area/population groups that have PiNs
 df_pops <- df %>%
   group_by(adm0_name,
-           area,
+           adm1_name,
+           adm2_name,
+           adm3_name,
            population_group,
            drop = TRUE) %>%
   summarize(value = max(target_population, na.rm = TRUE)) %>%

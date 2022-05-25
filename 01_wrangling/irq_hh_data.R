@@ -52,7 +52,7 @@ ocha_fp <- file.path(
   file_paths$ocha_dir,
   paste0(
     "Iraq 2022 HNO MCNA Intersectoral Composites",
-    "and Aggregation Template [Working].xlsx"
+    " and Aggregation Template [Working].xlsx"
   )
 )
 
@@ -81,8 +81,7 @@ df_irq_pops <- read_in_disagg(population_fp) %>%
       target_population
     )
   ) %>%
-  filter(target_population != 0 & adm1_name != "Total") %>%
-  select(adm2_name, population_group, target_population)
+  filter(target_population != 0 & adm1_name != "Total")
 
 ###########################
 #### CREATE CLEAN FILE ####
@@ -110,7 +109,10 @@ df_cleaned <- df %>%
   transmute(
     adm0_name = "Iraq",
     adm0_pcode = "IRQ",
-    area = dist_cod,
+    adm1_name,
+    adm1_pcode,
+    adm2_name = dist_cod,
+    adm2_pcode,
     population_group,
     hh_id,
     target_population,
