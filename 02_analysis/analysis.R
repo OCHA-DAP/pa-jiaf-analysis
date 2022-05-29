@@ -7,7 +7,13 @@ file_paths <- get_paths_analysis()
 #### WRANGLING ####
 ###################
 
-df <- map_dfr(list.files(file_paths$input_dir, full.names = TRUE, pattern = "pin"), read_csv) %>%
+df <- map_dfr(
+  list.files(
+    file_paths$input_dir,
+    full.names = TRUE, pattern = "pin"
+  ),
+  read_csv
+) %>%
   select(
     -matches("adm[0-9]{1}_[a-z]{2}$")
   ) %>%
@@ -113,7 +119,8 @@ pin_df <- max_df %>%
 
 # Make a file with cleaned up cluster names
 cluster_df <-
-  df %>% mutate(sector = tolower(sector)) %>% #clean up cluster names -- maybe there's a better way
+  df %>%
+  mutate(sector = tolower(sector)) %>% # clean up cluster names
   mutate(
     sector = case_when(
       sector %in% c("cc", "cccm", "gsat") ~ "cccm",
@@ -125,7 +132,8 @@ cluster_df <-
         "el",
         "mpca"
       ) ~ "erl",
-      #rt is early recovery, el is emergency livelihoods and mpca is Multi-Purpose Cash Assistance
+      # rt is early recovery, el is emergency livelihoods
+      # and mpca is Multi-Purpose Cash Assistance
       sector %in% c("education", "educacion", "educ", "ed") ~ "edu",
       sector %in% c(
         "fs",
@@ -143,7 +151,7 @@ cluster_df <-
         "secal"
       ) ~ "fsa",
       # securité alimentaire
-      sector %in% c("sante" , "he", "health", "salud", "san", "hlt") ~ "hea",
+      sector %in% c("sante", "he", "health", "salud", "san", "hlt") ~ "hea",
       sector %in% c(
         "health & nutrition",
         "nutrition",
@@ -160,8 +168,20 @@ cluster_df <-
         "protection_aor",
         "prt"
       ) ~ "pro",
-      sector %in% c("protection_cp", "ninez", "cp", "child_protection") ~ "pro-cp",
-      sector %in% c("vbg", "protection_gbv", "pro-gen pro", "gbv", "gb", "gp") ~ "pro-gbv",
+      sector %in% c(
+        "protection_cp",
+        "ninez",
+        "cp",
+        "child_protection"
+      ) ~ "pro-cp",
+      sector %in% c(
+        "vbg",
+        "protection_gbv",
+        "pro-gen pro",
+        "gbv",
+        "gb",
+        "gp"
+      ) ~ "pro-gbv",
       sector %in% c("hlp", "ltb", "protection_hlp") ~ "pro-hlp",
       # Droit au Logement, à la Terre et aux Biens
       sector %in% c("ma", "minas", "lam") ~ "pro-ma",
@@ -176,21 +196,30 @@ cluster_df <-
         "shelter & nfis",
         "shleter&nfis",
         "shelter and nfi",
-        "sn" ,
+        "sn",
         "nfi"
       ) ~ "shl",
       sector == "el" ~ "livelihoods",
       sector %in% c("wash", "wa", "eha") ~ "wsh",
-      sector %in% c("refugees", "refugee response", "migrants") ~ "displacement_status",
+      sector %in% c(
+        "refugees",
+        "refugee response",
+        "migrants"
+      ) ~ "displacement_status",
       sector %in% c("inter_sectoral", "intersectorial", "itc") ~ "intersectoral"
     )
-  ) %>% filter(sector != "intersectoral")
+  ) %>%
+  filter(sector != "intersectoral")
 
 
 # Clean up output file for actual output
-write_csv(pct_df,
-          file.path(file_paths$output_dir,
-                    "2022_hno_pin_contributions.csv"))
+write_csv(
+  pct_df,
+  file.path(
+    file_paths$output_dir,
+    "2022_hno_pin_contributions.csv"
+  )
+)
 
 write_csv(
   pin_df,

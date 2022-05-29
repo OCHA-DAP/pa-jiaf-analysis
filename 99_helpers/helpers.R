@@ -17,7 +17,7 @@ get_paths <- function(country, country_name = NULL) {
   if (is.null(country_name)) {
     country_name <- country
   }
-  
+
   # iso3 for use in save path
   iso3 <- tolower( # nolint
     countrycode::countryname(
@@ -25,16 +25,16 @@ get_paths <- function(country, country_name = NULL) {
       destination = "iso3c"
     )
   )
-  
+
   data_dir <- Sys.getenv("JIAF_DATA_DIR")
-  
+
   # directory with ocha provided data
   ocha_dir <- file.path(
     data_dir,
     "Data from country offices - OCHA",
     country
   )
-  
+
   # directory with cluster provided data
   cluster_dir <- file.path(
     data_dir,

@@ -107,7 +107,7 @@ tester <- function(df) {
   n <- ncol(df)
   map_dfr(
     (n - 2):1,
-    \(x) {
+    function(x) {
       cols <- c(names(df)[1:x], "sector")
       df %>%
         group_by(

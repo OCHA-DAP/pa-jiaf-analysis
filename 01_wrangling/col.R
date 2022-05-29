@@ -114,27 +114,31 @@ df_col <- right_join(
   ) %>%
   filter(sector != "san")
 
-indicator_desc <- data.frame(t(df_indicators[c(3,7),]), row.names = NULL) %>%
+indicator_desc <- data.frame(t(df_indicators[c(3, 7), ]), row.names = NULL) %>%
   filter(X1 %in% c(1:14))
 
-names(df_indicators) <- paste0(df_indicators[7,], replace_na(as.character(df_indicators[8,]), ""))
+names(df_indicators) <-
+  paste0(df_indicators[7, ], replace_na(as.character(df_indicators[8, ]), ""))
 
-df_col_indicator <- df_indicators %>% clean_names() %>%
+df_col_indicator <- df_indicators %>%
+  clean_names() %>%
   filter(row_number() > 8 & municipio != "X") %>%
   select(
     departamento,
     municipio,
     crit_1:crit_14,
     na_cri_1:na_cri_14
-  ) %>% 
+  ) %>%
   pivot_longer(
     cols = matches("^crit|^na_cri"),
     names_to = c(".value", "indicator"),
     names_pattern = "(^crit|^na_cri)_(.*)"
   ) %>%
   left_join(
-    df_col %>% select(adm1_name, adm1_pcode, adm2_name, adm2_pcode) %>% unique(),
-    by=c("municipio" = "adm2_name")
+    df_col %>%
+      select(adm1_name, adm1_pcode, adm2_name, adm2_pcode) %>%
+      unique(),
+    by = c("municipio" = "adm2_name")
   ) %>%
   left_join(
     indicator_desc,

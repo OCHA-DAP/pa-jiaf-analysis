@@ -29,10 +29,10 @@ df_pins <- read.csv(
       TRUE ~ "B"
     ),
   ) %>%
-  group_by(    
+  group_by(
     adm0_name,
     adm0_pcode
-    ) %>%
+  ) %>%
   mutate(
     percent_diff = (pin - pin[sector_group == "intersectoral"])
     / pin[sector_group == "intersectoral"] * 100
@@ -94,4 +94,3 @@ df_pins %>%
 ggsave(file.path(save_path, "m-twg_2022_hno_pct_difference.png"),
   width = 3840, height = 2018, units = "px"
 )
-

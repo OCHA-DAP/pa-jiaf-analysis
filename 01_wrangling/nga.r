@@ -77,16 +77,17 @@ df_nga <- df_ocha %>%
     adm0_name = "Nigeria",
     adm0_pcode = "NGA",
     adm1_name = adm1_en,
-    adm1_pcode,    
+    adm1_pcode,
     adm2_name = adm2_en,
     adm2_pcode,
-    sector, 
+    sector,
     pin = round(pin),
     source = "ocha",
     sector_general = ifelse(sector == "intersectoral",
-                            "intersectoral",
-                            "sectoral")
+      "intersectoral",
+      "sectoral"
     )
+  )
 
 write_csv(
   df_nga,

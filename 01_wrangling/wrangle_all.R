@@ -11,7 +11,7 @@ wrangle_files <- wrangle_files[wrangle_files != "wrangle_all.R"]
 
 walk(
   wrangle_files,
-  \(x) {
+  function(x) {
     print(x)
     run(
       file.path(

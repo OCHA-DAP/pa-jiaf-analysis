@@ -54,7 +54,7 @@ df_ocha_is <- df_ocha_raw %>%
     -adm2_pcode,
     names_to = c(".value", "condition", "population_group"),
     names_sep = "_"
-  ) %>%  
+  ) %>%
   mutate(
     pin = replace_na(pin, 0),
     sev = replace_na(sev, 0)
@@ -73,9 +73,11 @@ df_ocha <- bind_rows(
   df_ocha_clusters,
   df_ocha_is
 ) %>%
-  mutate(source = "ocha", .before = 1,
-         pin = ifelse(pin == -Inf, 0, round(pin)),
-         severity = ifelse(pin == 0, 1, severity))
+  mutate(
+    source = "ocha", .before = 1,
+    pin = ifelse(pin == -Inf, 0, round(pin)),
+    severity = ifelse(pin == 0, 1, severity)
+  )
 
 ######################
 #### CLUSTER DATA ####
@@ -124,32 +126,33 @@ df_organized <- df_ocha %>%
     adm2_pcode
   )) %>%
   left_join(df_pcodes,
-            by = "adm2_pcode",
+    by = "adm2_pcode",
   ) %>%
   transmute(
     adm0_name = "Sudan",
     adm0_pcode = "SDN",
     adm1_name = adm1_en,
-    adm1_pcode,    
+    adm1_pcode,
     adm2_name = adm2_en,
     adm2_pcode,
     population_group,
-    sector, 
+    sector,
     pin = round(pin),
     severity,
     source = "ocha",
     sector_general = ifelse(sector == "intersectoral",
-                            "intersectoral",
-                            "sectoral")
+      "intersectoral",
+      "sectoral"
+    )
   )
- 
+
 # deleting those areas that don't have any PiN for a specific group
 df_summarized_pops <- df_organized %>%
   group_by(adm2_name, population_group) %>%
-  summarise(tot_pin = sum(pin, na.rm = T)) %>%
+  summarise(tot_pin = sum(pin, na.rm = TRUE)) %>%
   filter(tot_pin != 0)
 
-df_sdn <- df_organized %>% 
+df_sdn <- df_organized %>%
   filter(
     paste0(adm2_name, population_group) %in% paste0(
       df_summarized_pops$adm2_name,

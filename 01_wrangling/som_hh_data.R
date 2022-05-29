@@ -81,13 +81,15 @@ df_cleaned <- df %>%
       population_group == "IDP" ~ "idp",
       population_group == "HC" ~ "res"
     ),
-    #some names of adm2 are not aligned with OCHA names
+    # some names of adm2 are not aligned with OCHA names
     adm2_name = gsub("_", " ", adm2_name),
-    adm2_name = case_when(adm2_name == "Baidoa" ~ "Baydhaba",
-                          adm2_name == "Kismayo" ~ "Kismaayo",
-                          adm2_name == "Bandarbayla" ~ "Bandarbeyla",
-                          adm2_name == "Garowe" ~ "Garoowe",
-                          TRUE ~ adm2_name)
+    adm2_name = case_when(
+      adm2_name == "Baidoa" ~ "Baydhaba",
+      adm2_name == "Kismayo" ~ "Kismaayo",
+      adm2_name == "Bandarbayla" ~ "Bandarbeyla",
+      adm2_name == "Garowe" ~ "Garoowe",
+      TRUE ~ adm2_name
+    )
   ) %>%
   pivot_longer(
     cols = matches("^[0-9]"),

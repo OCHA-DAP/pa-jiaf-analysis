@@ -81,10 +81,10 @@ sampler <- function(df) {
 
   map_dfr(
     1:n,
-    \(x) {
+    function(x) {
       map_dfr(
         1:200,
-        \(y) {
+        function(y) {
           inds <- sample(1:n, x)
           ind_max(df, inds)
         }

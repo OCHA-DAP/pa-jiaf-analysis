@@ -110,7 +110,7 @@ df_indicator_pin %>%
     )
   ) +
   theme_light() +
-  scale_y_continuous(labels = \(x) paste0(x, "M")) +
+  scale_y_continuous(labels = function(x) paste0(x, "M")) +
   scale_x_discrete(
     labels = function(x) {
       str_wrap(x, width = 35)
@@ -158,7 +158,7 @@ df_sectors %>%
   ), ) +
   scale_fill_distiller(type = "seq", direction = 1) +
   geom_col() +
-  scale_x_continuous(labels = \(x) paste0(x, "M")) +
+  scale_x_continuous(labels = function(x) paste0(x, "M")) +
   theme_minimal() +
   theme(
     axis.title.y = element_blank(),
