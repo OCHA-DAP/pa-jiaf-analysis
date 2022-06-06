@@ -72,7 +72,11 @@ df_ocha <- bind_rows(
 ###############
 
 df_pcodes <- df_ocha_is_raw %>%
-  select(adm1_en = Region, adm2_en = Area) %>%
+  select(
+    adm1_en = Region,
+    adm2_en = Area,
+    affected_population = Population
+  ) %>%
   unique()
 
 ############################
@@ -98,6 +102,7 @@ df_pse <- df_ocha %>%
     adm1_pcode = adm1_en,
     adm2_name = adm2_en,
     adm2_pcode = adm2_en,
+    affected_population,
     sector,
     pin = round(pin),
     source = "ocha",
@@ -105,7 +110,19 @@ df_pse <- df_ocha %>%
       "intersectoral",
       "sectoral"
     )
-  )
+  ) %>%
+  group_by(
+    adm2_pcode
+  ) %>%
+  mutate(
+    affected_population =
+      ifelse(affected_population < pin,
+        max(pin),
+        affected_population
+      ),
+    affected_population = max(affected_population)
+  ) %>%
+  ungroup()
 
 write_csv(
   df_pse,

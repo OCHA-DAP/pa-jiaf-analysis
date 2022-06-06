@@ -82,6 +82,7 @@ df_organized <- df_ocha_raw %>%
     age,
     sex = sexe,
     population_group = gsub("n_", "", population_group),
+    affected_population = pop22,
     pin = replace_na(value, 0),
     source = "ocha",
     sector_general = ifelse(

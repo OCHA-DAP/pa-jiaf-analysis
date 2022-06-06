@@ -64,7 +64,14 @@ df_ocha <- df_ocha_raw %>%
     names_to = c("sector", ".value"),
     names_sep = "_"
   ) %>%
-  select(adm2_pcode, population_group, sector, pin, severity = sev) %>%
+  select(
+    adm2_pcode,
+    population_group,
+    affected_population = pop_num,
+    sector,
+    pin,
+    severity = sev
+  ) %>%
   drop_na(adm2_pcode) %>%
   mutate(
     source = "ocha"
@@ -95,9 +102,16 @@ df_organized <- df_ocha %>%
     adm2_name = adm2_en,
     adm2_pcode,
     population_group,
+    affected_population,
     sector,
     pin = round(pin),
-    severity = ifelse(pin == 0, 1, severity),
+    # 4 cases of pin higher than population figures
+    pin = ifelse(pin > affected_population, affected_population, pin),
+    severity = case_when(
+      pin == 0 | severity == 0 | is.na(severity),
+      1,
+      severity
+    ),
     source = "ocha",
     sector_general = ifelse(
       sector == "itc",

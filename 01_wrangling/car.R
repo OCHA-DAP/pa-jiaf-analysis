@@ -23,14 +23,12 @@ ocha_fp <- file.path(
 # too many columns with the same name
 # extracting only the part that is necessary and
 # aligns with published HNO
-df_ocha_raw <- read_excel(
-  ocha_fp,
+df_ocha_raw <- read_excel(ocha_fp,
   range = "AM2:AW186",
   sheet = "Analyse"
 ) %>%
   clean_names() %>%
-  transmute(
-    prefecture,
+  transmute(prefecture,
     sous_prefecture,
     pop_groupe,
     sector = "intersectoral",
@@ -38,8 +36,7 @@ df_ocha_raw <- read_excel(
   )
 
 # reading a sheet to extract pcodes
-df_ocha_pcodes <- read_excel(
-  ocha_fp,
+df_ocha_pcodes <- read_excel(ocha_fp,
   sheet = "Pop_SPref2022HorsRef"
 ) %>%
   filter(row_number() < 80) %>%
@@ -55,8 +52,7 @@ df_cccm <- read_excel(
   range = "K4:U232"
 ) %>%
   clean_names() %>%
-  transmute(
-    prefecture,
+  transmute(prefecture,
     sous_prefecture,
     pop_groupe,
     pin = pin_expert_2022,
@@ -64,12 +60,11 @@ df_cccm <- read_excel(
   )
 
 # Education cluster data
-df_education <- read_excel(
-  file.path(
-    file_paths$ocha_dir,
-    "CAR_HNO_2022_Education.xlsx"
-  ),
-  sheet = "Final_pop_numbers_vFINAL_OCHA"
+df_education <- read_excel(file.path(
+  file_paths$ocha_dir,
+  "CAR_HNO_2022_Education.xlsx"
+),
+sheet = "Final_pop_numbers_vFINAL_OCHA"
 ) %>%
   clean_names() %>%
   filter(!is.na(pcode_pref)) %>%
@@ -78,9 +73,13 @@ df_education <- read_excel(
     pcode_pref,
     sous_prefecture,
     pcode_sous_pref,
-    pop_groupe = "total",
+    pop_groupe = "all",
     pin = total,
     sector = "education"
+  ) %>%
+  mutate(
+    adm1_lookup = gsub("_[0-9]+$", "", make_clean_names(prefecture, )),
+    adm2_lookup = make_clean_names(sous_prefecture)
   )
 
 # Food Security cluster data
@@ -97,7 +96,7 @@ df_fs <- read_excel(
   transmute(
     prefecture,
     sous_prefecture,
-    pop_groupe = "total",
+    pop_groupe = "all",
     pin = phase_3_number_2,
     sector = "food security"
   )
@@ -115,7 +114,7 @@ df_nutr <- read_excel(
   transmute(
     prefecture = pref,
     sous_prefecture = sp,
-    pop_groupe = "total",
+    pop_groupe = "all",
     pin = total,
     sector = "nutrition"
   )
@@ -131,8 +130,7 @@ df_cp <- read_excel(
   range = "CA4:CK200"
 ) %>%
   clean_names() %>%
-  transmute(
-    prefecture,
+  transmute(prefecture,
     sous_prefecture,
     pop_groupe,
     pin = pin_expert,
@@ -149,8 +147,7 @@ df_prot <- read_excel(
   range = "K4:U232"
 ) %>%
   clean_names() %>%
-  transmute(
-    prefecture,
+  transmute(prefecture,
     sous_prefecture,
     pop_groupe,
     pin = pin_expert,
@@ -161,39 +158,36 @@ df_prot <- read_excel(
 df_health <- read_excel(
   file.path(
     file_paths$ocha_dir,
-    "CAR_HNO_2022_Santé_VF.xlsx"
+    "CAR_HNO_2022_Sant<U+00E9>_VF.xlsx"
   ),
   sheet = "2-PIN2021Subpref",
   range = "CT5:DG234"
 ) %>%
   clean_names() %>%
   transmute(
-    prefecture,
+    prefecture = gsub("(-/-)(.*)$", "", prefecture),
     sous_prefecture,
     pop_groupe,
     pin = expert3,
     sector = "health"
   )
 
-# Protection GBV cluster data
-df_gbv <- read_excel(
-  file.path(
-    file_paths$ocha_dir,
-    "CAR_HNO_2022_VBG.xlsx"
-  ),
-  sheet = "3-PIN"
+# Protection GBV cluster data, at admin 1 level
+df_gbv <- read_excel(file.path(
+  file_paths$ocha_dir,
+  "CAR_HNO_2022_VBG.xlsx"
+),
+sheet = "3-PIN"
 ) %>%
   clean_names() %>%
-  transmute(
-    prefecture,
-    sous_prefecture = NA_character_,
-    pop_groupe = "total",
+  transmute(prefecture,
+    pop_groupe = "all",
     pin = pin_global,
     sector = "protection_gbv"
   )
 
 # WASH cluster data
-df_health <- read_excel(
+df_wash <- read_excel(
   file.path(
     file_paths$ocha_dir,
     "CAR_HNO_2022_WASH.xlsx"
@@ -202,12 +196,25 @@ df_health <- read_excel(
   range = "BE4:BO200"
 ) %>%
   clean_names() %>%
-  transmute(
-    prefecture,
+  transmute(prefecture,
     sous_prefecture,
     pop_groupe,
     pin = pin_expert,
     sector = "wash"
+  )
+
+# Pcodes
+df_pcodes <- read_excel(file.path(
+  file_paths$ocha_dir,
+  "CAR_HNO_2022_Protection_VF.xlsx"
+),
+sheet = "Pop_SPref2022HorsRef"
+) %>%
+  clean_names() %>%
+  filter(row_number() < 80) %>%
+  mutate(
+    adm1_lookup = gsub("_[0-9]+$", "", make_clean_names(prefecture_1, )),
+    adm2_lookup = make_clean_names(sous_prefecture)
   )
 
 
@@ -215,7 +222,7 @@ df_health <- read_excel(
 #### DATA WRANGLING ####
 ########################
 
-df_organized <- bind_rows(
+df_car <- bind_rows(
   df_ocha_raw,
   df_fs,
   df_gbv,
@@ -224,50 +231,71 @@ df_organized <- bind_rows(
   df_nutr,
   df_health,
   df_education,
-  df_prot
+  df_prot,
+  df_wash
 ) %>%
+  # excluding population group disaggregation since only 4 sectors have it
+  group_by(
+    prefecture,
+    sous_prefecture,
+    sector
+  ) %>%
+  summarise(
+    pin = sum(round(pin), na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    adm1_lookup = gsub(
+      "_[0-9]+$",
+      "",
+      make_clean_names(
+        replace_na(prefecture, "Bamingui-Bangoran"),
+      )
+    ),
+    adm2_lookup = gsub(
+      "_[0-9]+$",
+      "",
+      make_clean_names(sous_prefecture)
+    ),
+    adm2_lookup = case_when(
+      adm2_lookup %in% c("nanga_boguila", "nana_boguila") ~ "nangha_boguila",
+      adm2_lookup == "bossemtele" ~ "bossemptele",
+      adm2_lookup == "aba" ~ "abba",
+      adm2_lookup == "dede_mokouba" ~ "dede_makouba",
+      adm2_lookup == "bantangafo" ~ "batangafo",
+      TRUE ~ adm2_lookup
+    ),
+  ) %>%
+  left_join(
+    df_pcodes %>% select(
+      adm2_lookup,
+      adm1_name = prefecture_1,
+      adm1_pcode = pcode_pref_2,
+      adm2_name = sous_prefecture,
+      adm2_pcode = pcode_sous_pref
+    ),
+    by = "adm2_lookup"
+  ) %>%
   transmute(
     adm0_name = "Central African Republic",
     adm0_pcode = "CAR",
-    adm1_name = prefecture,
-    adm1_pcode = df_education$pcode_pref[match(
-      adm1_name,
-      df_education$prefecture
-    )],
-    adm2_name = sous_prefecture,
-    adm2_pcode = df_ocha_pcodes$pcode_sous_pref[match(
-      sous_prefecture,
-      df_ocha_pcodes$sous_prefecture
-    )],
-    adm2_pcode = case_when(
-      sous_prefecture == "Bangui" ~ "CF711",
-      sous_prefecture == "Batangafo" ~ "CF326",
-      sous_prefecture %in% c("Nana-Boguila", "Nangha-Boguila") ~ "CF324",
-      sous_prefecture == "Abba" ~ "CF224",
-      TRUE ~ adm2_pcode
-    ),
-    sector = "intersectoral",
-    population_group = pop_groupe,
-    pin = round(pin, 0),
+    adm1_name = ifelse(is.na(adm1_name), prefecture, adm1_name),
+    adm1_pcode =
+      ifelse(
+        is.na(adm1_pcode),
+        df_pcodes$pcode_pref_2[match(
+          adm1_name,
+          df_pcodes$prefecture_1
+        )],
+        adm1_pcode
+      ),
+    adm2_name = ifelse(is.na(adm2_name), adm1_name, adm2_name),
+    adm2_pcode = ifelse(is.na(adm2_pcode), adm1_pcode, adm2_pcode),
+    sector,
+    pin,
     source = "ocha",
-    sector_general = "intersectoral"
-  ) %>%
-  filter(
-    population_group != "total"
-  )
-
-# deleting those areas that don't have any PiN for a specific group
-df_summarized_pops <- df_organized %>%
-  group_by(adm1_name, population_group) %>%
-  summarise(tot_pin = sum(pin, na.rm = TRUE)) %>%
-  filter(tot_pin != 0)
-
-df_car <- df_organized %>%
-  filter(
-    paste0(adm1_name, population_group) %in% paste0(
-      df_summarized_pops$adm1_name,
-      df_summarized_pops$population_group
-    )
+    sector_general =
+      ifelse(sector == "intersectoral", "intersectoral", "sectoral")
   )
 
 write_csv(

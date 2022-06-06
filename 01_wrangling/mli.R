@@ -32,7 +32,6 @@ df_ocha_raw <- read_excel(
 #### DATA WRANGLING ####
 ########################
 
-
 df_mli <- df_ocha_raw %>%
   rename(
     abris = pin_21,
@@ -57,15 +56,30 @@ df_mli <- df_ocha_raw %>%
     adm2_name = cercle,
     adm2_pcode = pcode_cer,
     population_group = types_population,
+    affected_population = estimation_population_en_2021,
     sector,
     pin = round(pin),
+    affected_population = affected_population,
     source = "ocha",
     sector_general = ifelse(
       sector == "intersectoral",
       "intersectoral",
       "sectoral"
     )
-  )
+  ) %>%
+  group_by(
+    adm2_pcode,
+    population_group
+  ) %>%
+  mutate(
+    affected_population =
+      ifelse(affected_population < pin,
+        max(pin),
+        affected_population
+      ),
+    affected_population = max(affected_population)
+  ) %>%
+  ungroup()
 
 write_csv(
   df_mli,

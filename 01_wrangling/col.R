@@ -78,6 +78,7 @@ df_ocha <- df_ocha_raw %>%
     source = "ocha",
     sector,
     adm2_file_code = codigo_divipola,
+    affected_population = poblacion_dane_2021,
     pin = ifelse(
       severidad < 3 & sector == "intersectorial",
       0,
@@ -103,8 +104,11 @@ df_col <- right_join(
     adm1_pcode,
     adm2_name = adm2_es,
     adm2_pcode,
+    affected_population,
     sector,
     pin = round(replace_na(pin, 0), 0),
+    # 7 cases where the pin is bit higher than the population
+    pin = ifelse(pin > affected_population, affected_population, pin),
     source = "ocha",
     sector_general = ifelse(
       sector == "intersectorial",

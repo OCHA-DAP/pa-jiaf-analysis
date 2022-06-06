@@ -26,6 +26,13 @@ df_ocha_raw <- read_excel(
 ) %>%
   clean_names()
 
+df_population <- read_excel(
+  ocha_fp,
+  sheet = "Step 6-PiN",
+  skip = 1
+) %>%
+  clean_names()
+
 ########################
 #### DATA WRANGLING ####
 ########################
@@ -46,6 +53,10 @@ df_cleaned <- df_ocha_raw %>%
     adm1_pcode,
     adm2_name = adm2_county,
     adm2_pcode,
+    affected_population = df_population$population[match(
+      adm2_name,
+      df_population$adm2_county
+    )],
     sector = ifelse(
       sector == "final_pi_n_hpc2022",
       "intersectoral",
@@ -58,7 +69,19 @@ df_cleaned <- df_ocha_raw %>%
       "intersectoral",
       "sectoral"
     )
-  )
+  ) %>%
+  group_by(
+    adm2_pcode
+  ) %>%
+  mutate(
+    affected_population =
+      ifelse(affected_population < pin,
+        max(pin),
+        affected_population
+      ),
+    affected_population = max(affected_population)
+  ) %>%
+  ungroup()
 
 write_csv(
   df_cleaned,
