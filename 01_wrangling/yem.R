@@ -35,6 +35,7 @@ df_ocha_raw <- read_excel(
 # renaming the columns with the same name to their cluster name
 # adm1 pcodes can be extracted from adm2 pcodes
 df_yem <- df_ocha_raw %>%
+  filter(pop_group == "Resident") %>%
   mutate(
     rmms = sum_row(refugee, migrant, na.rm = TRUE),
     intersectoral = jiaf_refugee_migrant,
@@ -52,16 +53,6 @@ df_yem <- df_ocha_raw %>%
     names_to = "sector",
     values_to = "pin"
   ) %>%
-  group_by(
-    x2,
-    pcode,
-    district,
-    sector
-  ) %>%
-  summarize(
-    pin = sum(pin, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
   transmute(
     adm0_name = "Yemen",
     adm0_pcode = "YEM",
@@ -69,6 +60,7 @@ df_yem <- df_ocha_raw %>%
     adm1_pcode = gsub("[0-9]{2}$", "", pcode),
     adm2_name = district,
     adm2_pcode = pcode,
+    affected_population = round(total_pop),
     sector,
     pin = round(replace_na(pin, 0)),
     source = "ocha",
@@ -77,6 +69,17 @@ df_yem <- df_ocha_raw %>%
       "intersectoral",
       "sectoral"
     )
+  ) %>%
+  group_by(
+    adm2_name
+  ) %>%
+  mutate(
+    affected_population =
+      ifelse(affected_population < pin,
+        max(pin),
+        affected_population
+      ),
+    affected_population = max(affected_population)
   )
 
 write_csv(

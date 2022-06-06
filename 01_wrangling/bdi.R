@@ -49,6 +49,20 @@ df_indicators <- read_excel(
 ) %>%
   clean_names()
 
+df_population <- read_excel(
+  ocha_fp,
+  skip = 1,
+  sheet = "Baseline Population withoutSADD"
+) %>%
+  clean_names() %>%
+  mutate(
+    population_group = case_when(
+      group == "Autres Personnes vuln<U+00E9>rables" ~ "APV",
+      group == "Rapatries" ~ "Rapatri<U+00E9>s",
+      TRUE ~ group
+    )
+  )
+
 ########################
 #### DATA WRANGLING ####
 ########################
@@ -68,6 +82,10 @@ df_cleaned <- df_ocha_raw %>%
       df_ocha_pcode_extract$adm1_state
     )],
     population_group = gsub("[0-9]_", "", population),
+    affected_population = df_population$individuals[match(
+      paste0(adm1_pcode, population_group),
+      paste0(df_population$adm1_pcode, df_population$population_group)
+    )],
     sector = ifelse(sector == "pin_final", "intersectoral", sector),
     pin,
     source = "ocha",
@@ -88,6 +106,7 @@ df_refugees_cleaned <- df_ocha_refugees %>%
       df_ocha_pcode_extract$adm1_state
     )],
     population_group = "refugees",
+    affected_population = round(total_64), # all refugees are in need
     sector = "refugees",
     pin = total_64,
     source = "ocha",

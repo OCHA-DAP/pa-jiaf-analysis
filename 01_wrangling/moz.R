@@ -25,7 +25,8 @@ df_ocha_raw <- read_excel(
   skip = 4,
   sheet = "Combined_Intersectoral_PIN"
 ) %>%
-  drop_na(ADM1_PROVINCE)
+  clean_names() %>%
+  drop_na(adm1_province)
 
 ########################
 #### DATA WRANGLING ####
@@ -33,7 +34,6 @@ df_ocha_raw <- read_excel(
 
 
 df_moz <- df_ocha_raw %>%
-  clean_names() %>%
   transmute(
     adm0_name = "Mozambique",
     adm0_pcode = "MOZ",
@@ -41,6 +41,7 @@ df_moz <- df_ocha_raw %>%
     adm1_pcode = adm1_pcode,
     adm2_name = adm2_district,
     adm2_pcode = adm2_pcode,
+    affected_population = round(total_pop),
     source = "ocha",
     fsc = as.numeric(number_of_people_in_ipc_phases),
     nutrition = as.numeric(
@@ -76,13 +77,24 @@ df_moz <- df_ocha_raw %>%
       "sectoral"
     ),
     pin = round(pin)
-  )
+  ) %>%
+  group_by(
+    adm2_pcode
+  ) %>%
+  mutate(
+    affected_population =
+      ifelse(affected_population < pin,
+        max(pin),
+        affected_population
+      ),
+    affected_population = max(affected_population)
+  ) %>%
+  ungroup()
 
 df_moz_indicator <- df_ocha_raw %>%
   type_convert() %>%
   pivot_longer(
-    cols = `# of people in IPC phases`:
-    `# of people without access to appropriate hygiene facilities`,
+    cols = `# of people in IPC phases`:`# of people without access to appropriate hygiene facilities`, # nolint
     values_to = "pin",
     names_to = "indicator_desc"
   ) %>%

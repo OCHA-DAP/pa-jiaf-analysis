@@ -31,6 +31,7 @@ df_ocha_raw <- read_excel(
     sector = "intersectoral",
     key_unit = zone_pop_group,
     population_group = ifelse(grepl("IDP", key_unit), "IDPs", "residents"),
+    affected_population = population,
     pin = total_pi_n
   )
 
@@ -59,12 +60,14 @@ df_edu_raw <- read_excel(
       na.rm = TRUE
     ),
     teacher = student * 0.1,
-    pin = teacher + student
+    pin = teacher + student,
+    affected_population = NA_integer_
   ) %>%
   select(
     sector,
     key_unit,
     population_group,
+    affected_population,
     pin
   )
 
@@ -87,6 +90,7 @@ df_fslc_raw <- read_excel(
     sector,
     key_unit,
     population_group,
+    affected_population = population_baseline,
     pin = pi_n_number
   )
 
@@ -107,7 +111,8 @@ df_health_raw <- read_excel(
   transmute(
     sector = "health",
     key_unit,
-    population_group = "total",
+    population_group = "all",
+    affected_population = population_baseline,
     pin = updated_pin
   )
 
@@ -126,6 +131,7 @@ df_prot_raw <- read_excel(
     sector = "protection",
     key_unit = zone_ocha,
     population_group = pop_group,
+    affected_population = total_population,
     pin = x13
   )
 
@@ -173,6 +179,7 @@ df_shelter <- left_join(
     sector = "shelter",
     key_unit,
     population_group = "residents",
+    affected_population = population_baseline.x,
     pin = max_row(pin1, pin2, na.rm = TRUE)
   )
 
@@ -190,6 +197,7 @@ df_wash_residents <- read_excel(
     sector = "wash",
     key_unit = key,
     population_group = "residents",
+    affected_population = population,
     pin = by_area
   )
 
@@ -206,6 +214,7 @@ df_wash_idps <- read_excel(
     sector = "wash",
     key_unit = replace_na(key, "Other"),
     population_group = "IDPs",
+    affected_population = population,
     pin = by_area
   )
 
@@ -225,8 +234,8 @@ df_indicators <- read_excel(
 # only two areas, extracted the pcodes manually
 df_organized <- rbind(
   df_ocha_raw,
-  df_edu_raw,
   df_fslc_raw,
+  df_edu_raw,
   df_health_raw,
   df_prot_raw,
   df_shelter,
@@ -253,6 +262,7 @@ df_organized <- rbind(
       TRUE ~ "Other"
     ),
     population_group,
+    affected_population = round(replace_na(affected_population, 0)),
     sector,
     pin = round(as.numeric(pin)),
     source = "ocha",
@@ -261,7 +271,16 @@ df_organized <- rbind(
       "intersectoral",
       "sectoral"
     )
-  )
+  ) %>%
+  group_by(
+    adm2_name,
+    administration,
+    population_group
+  ) %>%
+  mutate(
+    affected_population = max(affected_population)
+  ) %>%
+  ungroup()
 
 # deleting those areas that don't have any PiN for a specific group
 df_summarized_pops <- df_organized %>%

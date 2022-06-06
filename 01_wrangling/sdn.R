@@ -79,6 +79,31 @@ df_ocha <- bind_rows(
     severity = ifelse(pin == 0, 1, severity)
   )
 
+df_population <- read_excel(
+  file.path(
+    file_paths$ocha_dir,
+    "SDN HNO 2022 Baseline -JIAF exercise.xlsx"
+  ),
+  sheet = "Baseline populations",
+  skip = 1
+) %>%
+  clean_names() %>%
+  transmute(
+    adm2_pcode = pcode,
+    vul = population_2021_projection2,
+    ref = expss::sum_row(new_south_sudanese_projection_dec_2021,
+      new_non_ss_refugees_and_asylum_seekers_projection_dec_2021,
+      na.rm = TRUE
+    ),
+    ret = returnees,
+    idp = id_ps
+  ) %>%
+  pivot_longer(
+    cols = -adm2_pcode,
+    values_to = "affected_population",
+    names_to = "population_group"
+  )
+
 ######################
 #### CLUSTER DATA ####
 ######################
@@ -125,9 +150,8 @@ df_organized <- df_ocha %>%
     "SD19001",
     adm2_pcode
   )) %>%
-  left_join(df_pcodes,
-    by = "adm2_pcode",
-  ) %>%
+  left_join(df_pcodes) %>%
+  left_join(df_population) %>%
   transmute(
     adm0_name = "Sudan",
     adm0_pcode = "SDN",
@@ -136,6 +160,7 @@ df_organized <- df_ocha %>%
     adm2_name = adm2_en,
     adm2_pcode,
     population_group,
+    affected_population = round(affected_population),
     sector,
     pin = round(pin),
     severity,
@@ -144,7 +169,20 @@ df_organized <- df_ocha %>%
       "intersectoral",
       "sectoral"
     )
-  )
+  ) %>%
+  group_by(
+    adm2_pcode,
+    population_group
+  ) %>%
+  mutate(
+    affected_population =
+      ifelse(affected_population < pin,
+        max(pin),
+        affected_population
+      ),
+    affected_population = max(affected_population)
+  ) %>%
+  ungroup()
 
 # deleting those areas that don't have any PiN for a specific group
 df_summarized_pops <- df_organized %>%

@@ -27,7 +27,11 @@ df_ocha_raw <- read_excel(
 )
 
 df_ocha_clusters <- df_ocha_raw %>%
-  select(adm2_en = LGA, WASH:`PRO-HLP`) %>%
+  select(
+    adm2_en = LGA,
+    affected_population = `Total Population`,
+    WASH:`PRO-HLP`
+  ) %>%
   pivot_longer(
     cols = WASH:`PRO-HLP`,
     names_to = "sector",
@@ -37,6 +41,7 @@ df_ocha_clusters <- df_ocha_raw %>%
 df_ocha_is <- df_ocha_raw %>%
   select(
     adm2_en = LGA,
+    affected_population = `Total Population`,
     pin = `Estimated JIAF PIN\r\n(Severity classes 3, 4 & 5)`
   ) %>%
   mutate(sector = "intersectoral")
@@ -80,6 +85,7 @@ df_nga <- df_ocha %>%
     adm1_pcode,
     adm2_name = adm2_en,
     adm2_pcode,
+    affected_population,
     sector,
     pin = round(pin),
     source = "ocha",
@@ -87,7 +93,19 @@ df_nga <- df_ocha %>%
       "intersectoral",
       "sectoral"
     )
-  )
+  ) %>%
+  group_by(
+    adm2_pcode
+  ) %>%
+  mutate(
+    affected_population =
+      ifelse(affected_population < pin,
+        max(pin),
+        affected_population
+      ),
+    affected_population = max(affected_population)
+  ) %>%
+  ungroup()
 
 write_csv(
   df_nga,

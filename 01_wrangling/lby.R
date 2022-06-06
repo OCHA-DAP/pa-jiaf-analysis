@@ -52,6 +52,19 @@ df_indicators <- read_excel(
   clean_names() %>%
   filter(pcode != "Total")
 
+df_population <- read_excel(
+  indicator_fp,
+  sheet = "Baseline Population"
+) %>%
+  clean_names() %>%
+  filter(mantika_pcode != "Total") %>%
+  pivot_longer(
+    cols = male_below_18:female_60,
+    names_to = "sex_age",
+    values_to = "affected_population"
+  ) %>%
+  separate(sex_age, c("sex", "age"), sep = "_", extra = "merge")
+
 ########################
 #### DATA WRANGLING ####
 ########################
@@ -177,7 +190,34 @@ df_lby <- df_organized %>%
       df_summarized_age_sex$sector,
       df_summarized_age_sex$age_sex
     )
-  )
+  ) %>%
+  left_join(
+    df_population %>% select(
+      adm3_pcode = baladiya_p_code,
+      population_group,
+      sex,
+      age,
+      affected_population
+    )
+  ) %>%
+  mutate(
+    pin = round(pin),
+    affected_population = round(affected_population)
+  ) %>%
+  # the population figures were not totally accurate
+  # decided to use the max pin for those with zero population or lower than pin
+  group_by(
+    adm3_pcode,
+    population_group,
+    sex,
+    age
+  ) %>%
+  mutate(
+    affected_population =
+      ifelse(affected_population < pin, max(pin), affected_population),
+    affected_population = max(affected_population)
+  ) %>%
+  ungroup()
 
 df_lby_indicator <- df_indicators %>%
   separate(

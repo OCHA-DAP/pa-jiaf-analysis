@@ -27,6 +27,14 @@ df_ocha_raw <- read_excel(
   clean_names() %>%
   drop_na(pcode)
 
+df_population <- read_excel(
+  ocha_fp,
+  sheet = "SEGAL 2022",
+  skip = 2
+) %>%
+  clean_names() %>%
+  drop_na(pcode)
+
 ########################
 #### DATA WRANGLING ####
 ########################
@@ -42,6 +50,10 @@ df_ven <- df_ocha_raw %>%
     adm0_pcode = "VEN",
     adm1_name = estado,
     adm1_pcode = pcode,
+    affected_population = df_population$poblacion_total_2021[match(
+      adm1_pcode,
+      df_population$pcode
+    )],
     sector = ifelse(sector == "total_pin", "intersectoral", sector),
     pin = round(pin),
     source = "ocha",

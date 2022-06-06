@@ -33,6 +33,7 @@ df_ocha <- read_excel(
     adm1_pcode = dep_p_code,
     adm2_name = commune,
     adm2_pcode = com_p_code,
+    affected_population = population,
     sector = "intersectoral",
     severity = round(vc, 0),
     pin = as.numeric(pi_n),
@@ -258,6 +259,7 @@ df_cluster_edu <- read_excel(
     adm1_pcode = code_dpt,
     adm2_name = commune,
     adm2_pcode = code_commune,
+    affected_population = pop,
     sector = "education",
     pin = as.numeric(pin),
     severity = NA_real_,
@@ -278,7 +280,15 @@ df_hti <- bind_rows(
   df_cluster_mig,
   df_cluster_nutrition,
   df_cluster_wash
-)
+) %>%
+  mutate(affected_population = ifelse(
+    is.na(affected_population),
+    df_ocha$affected_population[match(
+      adm2_pcode,
+      df_ocha$adm2_pcode
+    )],
+    affected_population
+  ))
 
 df_hti_cleaning <- df_indicator %>%
   select(-matches("^x[1-5]"), -c(
