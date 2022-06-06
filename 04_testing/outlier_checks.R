@@ -77,7 +77,7 @@ df_small_clusters <- df %>%
     affected_population
   ) %>%
   filter(sector %in% c("nut", "edu", "pro-cp", "pro-gbv")) %>%
-  mutate(perc_pin = (pin / affected_population) * 100)
+  mutate(perc_pin = pin / affected_population)
 
 df_outliers <- df %>%
   group_by(
@@ -96,8 +96,6 @@ df_outliers <- df %>%
     is_outlier = ifelse(is_upper_outlier == 1 | is_lower_outlier == 1, 1, 0)
   )
 
-
-
 df_outliers %>%
   group_by(
     adm0_pcode,
@@ -107,15 +105,114 @@ df_outliers %>%
     `upper outlier` = sum(is_upper_outlier, na.rm = TRUE) / n(),
     `lower outlier` = sum(is_lower_outlier, na.rm = TRUE) / n()
   ) %>%
-  filter(`upper outlier` + `lower outlier` != 0) %>%
   pivot_longer(
     cols = matches("(upper|lower) outlier"),
     names_to = "type",
     values_to = "value"
   ) %>%
-  ggplot(aes(x = sector, y = value * 100, fill = type)) +
+  filter(value != 0) %>%
+  ggplot(aes(x = sector, y = value, fill = type)) +
   geom_col() +
-  facet_wrap(~adm0_pcode, scales = "free")
+  facet_wrap(~adm0_pcode, scales = "free_x") +
+  scale_y_continuous(
+    labels = scales::percent_format()
+  ) +
+  labs(
+    title = paste0(
+      "Percentage of sectors being an outlier per ",
+      "lowest unit of analysis"
+    ),
+    y = "Percentage of lowest unit of analysis having outliers",
+    x = "Sectors with outliers",
+    fill = ""
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      colour = "#134373",
+      margin = margin(10, 10, 30, 10, "pt"),
+      hjust = 0.5
+    ),
+    legend.position = "bottom",
+    axis.title.x = element_text(
+      face = "bold",
+      size = 12,
+      colour = "#134373",
+      margin = margin(20, 10, 10, 10, "pt")
+    ),
+    axis.title.y = element_text(
+      face = "bold",
+      size = 12,
+      colour = "#134373",
+      margin = margin(10, 20, 10, 10, "pt")
+    )
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "2022_percentage_of_outlier_frequency_per_sector.png"
+  ),
+  height = 13,
+  width = 20
+)
+
+df_outliers %>%
+  group_by(
+    adm0_pcode,
+    adm_pcode,
+    pop_group
+  ) %>%
+  summarize(
+    is_upper_outlier = sum(is_upper_outlier, na.rm = TRUE),
+    is_lower_outlier = sum(is_lower_outlier, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  group_by(adm0_pcode) %>%
+  summarize(
+    `upper outlier` = sum(is_upper_outlier, na.rm = TRUE) / n(),
+    `lower outlier` = sum(is_lower_outlier, na.rm = TRUE) / n()
+  ) %>%
+  pivot_longer(
+    cols = matches("(upper|lower) outlier"),
+    names_to = "type",
+    values_to = "value"
+  ) %>%
+  ggplot(aes(x = reorder(adm0_pcode, +value), y = value, fill = type)) +
+  geom_col() +
+  coord_flip() +
+  scale_y_continuous(
+    labels = scales::percent_format()
+  ) +
+  labs(
+    title = "Percentage of lowest unit of analysis having at least one outlier",
+    y = "Percentage of lowest unit of analysis having at least one outlier",
+    x = "Country",
+    caption = "*UKR, SDN, PSE and MOZ don't have any outliers",
+    fill = "Type of outlier"
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      colour = "#134373",
+      margin = margin(10, 10, 30, 10, "pt"),
+      hjust = 0.5
+    ),
+    axis.title.x = element_text(
+      face = "bold",
+      size = 12,
+      colour = "#134373",
+      margin = margin(20, 10, 10, 10, "pt")
+    ),
+    axis.title.y = element_text(
+      face = "bold",
+      size = 12,
+      colour = "#134373",
+      margin = margin(10, 20, 10, 10, "pt")
+    )
+  )
 
 ggsave(
   file.path(
@@ -138,7 +235,7 @@ df_max_min %>%
   ) %>%
   ggplot(aes(x = perc_of_pop, fill = summary_mode)) +
   geom_density(na.rm = TRUE) +
-  facet_wrap(~adm0_pcode, scales = "free_y") +
+  facet_wrap(~adm0_pcode, scales = "fixed") +
   scale_x_continuous(
     labels = scales::percent_format(accuracy = 1)
   ) +
@@ -194,6 +291,15 @@ df_max_min %>%
     names_to = "summary_mode",
     values_to = "value"
   ) %>%
+  mutate(
+    summary_mode = case_when(
+      summary_mode == "max_pin" ~ "Max of Sectoral PiN",
+      summary_mode == "diff_second_max" ~
+        "% difference between max and second max PiN",
+      TRUE ~
+        "% difference between max and min PiN"
+    )
+  ) %>%
   group_by(
     adm0_pcode,
     summary_mode
@@ -201,15 +307,56 @@ df_max_min %>%
   summarize(
     value = sum(value) / sum(affected_population)
   ) %>%
-  ggplot(aes(y = value, x = summary_mode)) +
+  ggplot(aes(y = value, x = summary_mode, fill = "")) +
   geom_col() +
   coord_flip() +
-  facet_wrap(~adm0_pcode, scales = "free")
+  facet_wrap(~adm0_pcode, scales = "fixed") +
+  scale_x_discrete(
+    labels = function(x) {
+      str_wrap(x, width = 25)
+    }
+  ) +
+  labs(
+    x = "",
+    y = "Percentage of the total affected population",
+    title = paste0(
+      "Percentage difference between max PiN and second max PiN ",
+      "as well as min PiN per country"
+    )
+  ) +
+  scale_y_continuous(
+    labels = scales::percent_format()
+  ) +
+  scale_fill_manual(
+    values = c("#f9b993")
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      colour = "#134373",
+      margin = margin(10, 10, 30, 10, "pt"),
+      hjust = 0.5
+    ),
+    legend.position = "none",
+    axis.title.x = element_text(
+      face = "bold",
+      size = 12,
+      colour = "#134373",
+      margin = margin(20, 10, 10, 10, "pt")
+    ),
+    axis.title.y = element_text(
+      face = "bold",
+      size = 12,
+      colour = "#134373",
+      margin = margin(10, 20, 10, 10, "pt")
+    )
+  )
 
 ggsave(
   file.path(
     file_paths$output_dir,
-    "2022_max_pin_density.png"
+    "2022_perc_diff_max_min_pin.png"
   ),
   height = 13,
   width = 20
@@ -217,19 +364,49 @@ ggsave(
 
 ## density of percentage of PiN for the samll sectors
 df_small_clusters %>%
-  ggplot(aes(x = perc_pin, color = sector)) +
+  mutate(
+    sector = case_when(
+      sector == "nut" ~ "Nutrition",
+      sector == "edu" ~ "Education",
+      sector == "pro-cp" ~ "Child Protection",
+      sector == "pro-gbv" ~ "Protection GBV"
+    )
+  ) %>%
+  ggplot(aes(x = perc_pin, fill = sector)) +
   geom_density() +
-  facet_wrap(~adm0_pcode, scales = "free_y") +
+  facet_wrap(~adm0_pcode, scales = "free") +
   labs(
-    y = "Density of Max PiN",
+    y = "Density of percentage of sectoral PiN",
     title = paste0(
-      "Distribution of Percentage pf PiN as a percentage of the",
-      "affected population for Nutrition, Education,",
-      "Child Protection and GBV"
+      "PiN distribution of Nutrition, Education, Child Protection and GBV ",
+      "as percentage of the affected population"
     ),
-    x = "Percentage of PiN of the affected population"
+    x = "Percentage of PiN of the affected population",
+    fill = ""
+  ) +
+  scale_x_continuous(labels = scales::percent_format()) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      colour = "#134373",
+      margin = margin(10, 10, 30, 10, "pt"),
+      hjust = 0.5
+    ),
+    legend.position = "bottom",
+    axis.title.x = element_text(
+      face = "bold",
+      size = 12,
+      colour = "#134373",
+      margin = margin(20, 10, 10, 10, "pt")
+    ),
+    axis.title.y = element_text(
+      face = "bold",
+      size = 12,
+      colour = "#134373",
+      margin = margin(10, 20, 10, 10, "pt")
+    )
   )
-
 
 ggsave(
   file.path(
@@ -247,9 +424,49 @@ df_max_min %>%
     values_to = "sectors",
     names_to = "modes"
   ) %>%
+  mutate(
+    modes = ifelse(modes == "max_sector",
+      "Max sector",
+      "Second max sector"
+    )
+  ) %>%
   ggplot(aes(x = sectors, fill = modes)) +
   geom_histogram(stat = "count", position = "dodge") +
-  facet_wrap(~adm0_pcode, scales = "free")
+  facet_wrap(~adm0_pcode, scales = "free") +
+  labs(
+    y = "Frequency of lowest unit of analysis",
+    title = paste0(
+      "Frequency of sectors being max or second max value at the ",
+      "lowest unit of analysis per country"
+    ),
+    x = "Sectors",
+    fill = ""
+  ) +
+  scale_fill_manual(
+    values = c("#4d64ce", "#bfc7f9")
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      colour = "#134373",
+      margin = margin(10, 10, 30, 10, "pt"),
+      hjust = 0.5
+    ),
+    # legend.position = "bottom",
+    axis.title.x = element_text(
+      face = "bold",
+      size = 12,
+      colour = "#134373",
+      margin = margin(20, 10, 10, 10, "pt")
+    ),
+    axis.title.y = element_text(
+      face = "bold",
+      size = 12,
+      colour = "#134373",
+      margin = margin(10, 20, 10, 10, "pt")
+    )
+  )
 
 ggsave(
   file.path(
