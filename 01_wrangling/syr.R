@@ -24,8 +24,7 @@ ocha_fp <- file.path(
 df_ocha_pin <- read_excel(
   ocha_fp,
   skip = 3,
-  sheet = "Master",
-  guess_max = 500
+  sheet = "Master"
 ) %>%
   clean_names() %>%
   rename(
@@ -78,7 +77,7 @@ df_combined_all <- left_join(
       "admin3pcode"
     )
   ) %>%
-  filter(df_ocha_pin$final_est_of_total_pop_aug_2021 != 0) %>%
+  filter(final_est_of_total_pop_aug_2021 != 0) %>%
   mutate(
     across(
       matches("_pin|_severity"),
