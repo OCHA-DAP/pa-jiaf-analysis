@@ -79,7 +79,12 @@ df_small_clusters <- df %>%
     pin,
     affected_population
   ) %>%
-  filter(sector %in% c("nut", "edu", "pro-cp", "pro-gbv")) %>%
+  filter(sector %in% c(
+    "Nutrition",
+    "Education",
+    "Protection (CP)",
+    "Protection (GBV)"
+  )) %>%
   mutate(perc_pin = pin / affected_population)
 
 df_outliers <- df %>%
@@ -453,47 +458,67 @@ ggsave(
 
 ## density of percentage of PiN for the samll sectors
 df_small_clusters %>%
-  mutate(
-    sector = case_when(
-      sector == "nut" ~ "Nutrition",
-      sector == "edu" ~ "Education",
-      sector == "pro-cp" ~ "Child Protection",
-      sector == "pro-gbv" ~ "Protection GBV"
+  ggplot(
+    aes(
+      x = perc_pin,
+      y = ..scaled..,
+      fill = sector
     )
-  ) %>%
-  ggplot(aes(x = perc_pin, fill = sector)) +
-  geom_density() +
-  facet_wrap(~adm0_pcode, scales = "free") +
+  ) +
+  geom_density(
+    alpha = 0.5
+  ) +
+  facet_wrap(
+    ~adm0_pcode
+  ) +
   labs(
-    y = "Density of percentage of sectoral PiN",
+    y = "Density",
     title = paste0(
       "PiN distribution of Nutrition, Education, Child Protection and GBV ",
-      "as percentage of the affected population"
+      "as % of the affected population"
     ),
-    x = "Percentage of PiN of the affected population",
+    x = "PiN (% of the affected population)",
     fill = ""
   ) +
-  scale_x_continuous(labels = scales::percent_format()) +
+  scale_x_continuous(
+    labels = scales::percent_format(),
+    breaks = scales::pretty_breaks()
+  ) +
+  scale_fill_manual(
+    values = c(
+      "#007CE0",
+      "#1EBFB3",
+      "#F2645A",
+      "#888888"
+    )
+  ) +
+  theme_minimal() +
   theme(
     plot.title = element_text(
       face = "bold",
       size = 22,
-      colour = "#134373",
-      margin = margin(10, 10, 30, 10, "pt"),
-      hjust = 0.5
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
     ),
     legend.position = "bottom",
-    axis.title.x = element_text(
-      face = "bold",
-      size = 12,
-      colour = "#134373",
-      margin = margin(20, 10, 10, 10, "pt")
-    ),
-    axis.title.y = element_text(
-      face = "bold",
-      size = 12,
-      colour = "#134373",
-      margin = margin(10, 20, 10, 10, "pt")
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
     )
   )
 
