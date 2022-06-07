@@ -1,20 +1,20 @@
-library("ggplot2")
-library("tidyverse")
-library("stringr")
+library(ggplot2)
+library(tidyverse)
+library(stringr)
 library(scales)
 
-# TODO: refactor filepaths to helpers
-jiaf_dir <- Sys.getenv("JIAF_DATA_DIR")
-save_path <- file.path(jiaf_dir, "Data analyzed/HPC-2023")
+source(here::here("99_helpers", "helpers.R"))
+file_paths <- get_paths_analysis()
 
 ###################
 #### WRANGLING ####
 ###################
 
 # Plot the PINs
-df_pins <- read.csv(
+df_pins <- read_csv(
   file.path(
-    save_path,
+    file_paths$output_dir,
+    "datasets",
     "2022_hno_pin_totals.csv"
   )
 ) %>%
@@ -30,7 +30,6 @@ df_pins <- read.csv(
     ),
   ) %>%
   group_by(
-    adm0_name,
     adm0_pcode
   ) %>%
   mutate(
@@ -50,33 +49,12 @@ df_pins <- read.csv(
 #### PLOTTING ####
 ##################
 
-ggplot(df_pins, aes(
-  fill = fct_rev(sector_group), y = pin, x = adm0_pcode,
-  label = ifelse(percent_diff == 0, "",
-    paste0(round(percent_diff, digits = 0), "%")
-  )
-)) +
-  geom_bar(position = "dodge", stat = "identity") +
-  geom_text(vjust = -0.5, position = position_dodge(width = 1), size = 3) +
-  labs(
-    fill = "Methodology",
-    x = "Country",
-    y = "PIN"
-  ) +
-  scale_y_continuous(label = comma) +
-  theme_light() +
-  scale_fill_manual(values = c("#009988", "#EE7733"))
-
-ggsave(file.path(save_path, "m-twg_2022_hno_pin_totals.png"),
-  width = 3840, height = 2018, units = "px"
-)
-
 # difference with intersectoral
 df_pins %>%
   filter(sector_group == "HPC 2023") %>%
   ggplot(
     aes(
-      y = fct_reorder(adm0_name, percent_diff),
+      y = fct_reorder(adm0_pcode, percent_diff),
       x = percent_diff,
       fill = change_direction
     )

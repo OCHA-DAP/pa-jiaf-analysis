@@ -137,6 +137,7 @@ results_df %>%
   write_csv(
     file.path(
       file_paths$output_dir,
+      "datasets",
       "2022_hno_max_test.csv"
     )
   )
@@ -169,12 +170,6 @@ results_df %>%
   ) +
   coord_flip() +
   theme_minimal() +
-  theme(
-    axis.title.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    axis.text.y = element_blank(),
-    plot.background = element_rect(fill = "white")
-  ) +
   scale_y_continuous(
     labels = scales::percent_format(accuracy = 1)
   ) +
@@ -186,11 +181,48 @@ results_df %>%
       "Disaggregations go 1 to 6 from administrative ",
       "boundaries to population groups to sex and age"
     )
+  ) +
+  scale_fill_gradient(
+    low = "#D2F2F0",
+    high = "#18998F"
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    axis.title.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank(),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_hno_max_test.png"
   ),
   height = 13,
@@ -204,15 +236,13 @@ results_df %>%
     adm0_pcode
   ) %>%
   filter(
-    agg_cols_n %in% c(max(agg_cols_n), 1)
+    agg_cols_n %in% c(max(agg_cols_n), 1),
+    adm0_pcode != "VEN"
   ) %>%
   summarize(
     pin = pin[1] - pin[2],
     agg_diff = agg_cols_n[1] - agg_cols_n[2],
     .groups = "drop"
-  ) %>%
-  filter(
-    adm0_pcode != "VEN"
   ) %>%
   ggplot(
     aes(
@@ -221,9 +251,15 @@ results_df %>%
       fill = agg_diff
     )
   ) +
-  geom_bar(stat = "identity") +
+  geom_bar(
+    stat = "identity"
+  ) +
   scale_x_continuous(
     labels = scales::comma
+  ) +
+  scale_fill_gradient(
+    low = "#D2F2F0",
+    high = "#18998F"
   ) +
   theme_minimal() +
   theme(
@@ -240,11 +276,41 @@ results_df %>%
       "if calculated using multiple disaggregations"
     ),
     subtitle = "Comparing calculations from most disaggregated with admin 1"
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_hno_max_test_absolute.png"
   ),
   height = 6.5,
@@ -279,6 +345,10 @@ results_df %>%
   scale_x_continuous(
     labels = scales::percent_format(accuracy = 1)
   ) +
+  scale_fill_gradient(
+    low = "#D2F2F0",
+    high = "#18998F"
+  ) +
   theme_minimal() +
   theme(
     axis.title.y = element_blank(),
@@ -294,11 +364,41 @@ results_df %>%
       "calculated using multiple disaggregations"
     ),
     subtitle = "Comparing calculations from most disaggregated with admin 1"
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_hno_max_test_percent_change.png"
   ),
   height = 6.5,
@@ -335,23 +435,56 @@ results_df %>%
   scale_y_continuous(
     labels = scales::percent_format(accuracy = 1)
   ) +
-  scale_color_brewer(
-    palette = "PuOr"
+  scale_color_manual(
+    values = c(
+      "#18998F",
+      "#78D9D1",
+      "#F2645A",
+      "#007CE0"
+    )
   ) +
   theme_minimal() +
-  theme(
-    plot.background = element_rect(fill = "white")
-  ) +
   labs(
     y = "% reduction in PiN when aggregation removed",
     x = "Average # of unique groups in aggregation",
     color = "Type of aggregation",
     title = "Impact of aggregation on max PiN"
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
+
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_hno_max_test_pct.png"
   ),
   height = 6,
@@ -381,17 +514,13 @@ results_df %>%
       x = 0,
       xend = pin_diff
     ),
-    lwd = 3
+    lwd = 3,
+    color = "#1EBFB3"
   ) +
   scale_x_continuous(
     labels = scales::comma
   ) +
   theme_minimal() +
-  theme(
-    axis.title.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    plot.background = element_rect(fill = "white")
-  ) +
   labs(
     y = "",
     x = "Difference in PiN, disaggregated max - JIAF 1.1",
@@ -409,11 +538,42 @@ results_df %>%
       "PiNs match the disaggregated max"
     ),
     check_overlap = TRUE
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
+
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_hno_max_vs_jiaf.png"
   ),
   height = 6,

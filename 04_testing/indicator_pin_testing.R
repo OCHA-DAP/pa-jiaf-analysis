@@ -7,18 +7,21 @@ file_paths <- get_paths_analysis()
 #### WRANGLING ####
 ###################
 
-df_indicators <- read_csv(file.path(
-  file_paths$agg_dir,
-  "2022_indicator_pins.csv"
-))
+df_indicators <- read_csv(
+  file.path(
+    file_paths$agg_dir,
+    "2022_indicator_pins.csv"
+  )
+)
 
 df_sectors <- read_csv(
   file.path(
     file_paths$output_dir,
+    "datasets",
     "2022_hno_pin_totals.csv"
   )
 ) %>%
-  filter(adm0_name %in% df_indicators$adm0_name) %>%
+  filter(adm0_pcode %in% df_indicators$adm0_pcode) %>%
   rename(pin_calculation = sector_group)
 
 max_df <- df_indicators %>%
@@ -74,7 +77,7 @@ df_indicator_pin <- max_df %>%
   mutate(pin_calculation = "Max of Indicator PiN")
 
 df_indicator_pin %>%
-  rbind(df_sectors) %>%
+  bind_rows(df_sectors) %>%
   filter(pin_calculation != "intersectoral") %>%
   mutate(
     pin_calculation = case_when(
@@ -105,7 +108,7 @@ df_indicator_pin %>%
     x = "",
     y = "PIN",
     title = paste(
-      "Option3: Comparison between Max of",
+      "Option 3: Comparison between Max of",
       "Indicator PiN and Max of Sectoral"
     )
   ) +
@@ -116,28 +119,46 @@ df_indicator_pin %>%
       str_wrap(x, width = 35)
     }
   ) +
+  scale_fill_manual(
+    values = c("#007CE0", "#1EBFB3")
+  ) +
   theme(
     plot.title = element_text(
       face = "bold",
       size = 22,
-      colour = "#134373",
-      margin = margin(10, 10, 30, 10, "pt"),
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
     ),
-    axis.text.y = element_text(face = "bold", size = 10),
-    axis.text.x = element_blank(),
-    legend.text = element_text(size = 12),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
     legend.position = "bottom",
-    panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    panel.background = element_rect(fill = "transparent"),
+    panel.grid.major = element_blank(),
     legend.background = element_rect(fill = "transparent"),
     legend.box.background = element_rect(fill = "transparent"),
-    strip.text = element_text(size = 16)
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    ),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()
   )
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_indicator_pin_sectoral_pin.png"
   ),
   height = 6,
@@ -147,7 +168,8 @@ ggsave(
 df_sectors %>%
   filter(pin_calculation == "intersectoral") %>%
   left_join(df_indicator_pin %>%
-    transmute(adm0_name,
+    transmute(
+      adm0_name,
       ind_pin = pin
     )) %>%
   mutate(pin_diff = round((ind_pin - pin) / 1000000, 2)) %>%
@@ -157,15 +179,11 @@ df_sectors %>%
     label = paste0(pin_diff, "M")
   ), ) +
   scale_fill_distiller(type = "seq", direction = 1) +
-  geom_col() +
+  geom_col(
+    fill = "#1EBFB3"
+  ) +
   scale_x_continuous(labels = function(x) paste0(x, "M")) +
   theme_minimal() +
-  theme(
-    axis.title.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    plot.background = element_rect(fill = "white"),
-    legend.position = "none"
-  ) +
   labs(
     y = "",
     x = "Difference in PiN, max of indicator PiN - JIAF 1.1 PiN",
@@ -179,11 +197,41 @@ df_sectors %>%
     position = position_identity(),
     hjust = -.5,
     size = 4
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_absolute_compr_indicator_jiaf.png"
   ),
   height = 6,
@@ -203,7 +251,7 @@ df_sectors %>%
     x = pin_diff
   ), ) +
   scale_fill_continuous() +
-  geom_col() +
+  geom_col(fill = "#1EBFB3") +
   scale_x_continuous(labels = scales::comma) +
   theme_minimal() +
   theme(
@@ -220,11 +268,41 @@ df_sectors %>%
       "indicator PiN compared to max of sectoral PiN"
     ),
     caption = "Positive value means indicator PiN is higher than sectoral PiN"
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_absolute_compr_indicator_sectoral.png"
   ),
   height = 6,
@@ -248,7 +326,7 @@ df_sectors %>%
     label = paste0(pin_diff, "%")
   ), ) +
   scale_fill_distiller(type = "seq", direction = 1) +
-  geom_col() +
+  geom_col(fill = "#1EBFB3") +
   scale_x_continuous(labels = scales::comma) +
   theme_minimal() +
   theme(
@@ -275,11 +353,41 @@ df_sectors %>%
     position = position_identity(),
     hjust = -.3,
     size = 4
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_percent_compr_indicator_sectoral.png"
   ),
   height = 6,

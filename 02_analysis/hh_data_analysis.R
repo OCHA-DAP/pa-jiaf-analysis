@@ -14,7 +14,7 @@ source(here::here("99_helpers", "helpers.R"))
 file_paths <- get_paths_analysis()
 
 ###############################
-#### HH Aggregation Method ####
+#### HH AGGREGATION METHOD ####
 ###############################
 
 df <- read_csv(file.path(file_paths$agg_dir, "2022_hh_data.csv"))
@@ -124,12 +124,12 @@ hh_summarized <- hh_scoring_method %>%
   ) %>%
   mutate(
     value = round(percentage * target_population),
-    calculation_level = "from household indicators' severity scores"
+    calculation_level = "HH indicators' severity scores"
   ) %>%
   select(-c(target_population, percentage))
 
 ####################################
-##### Area Aggregation Methods #####
+##### AREA AGGREGATION METHODS #####
 ####################################
 
 area_summarized <- df %>%
@@ -196,86 +196,57 @@ area_pin <-
     names_to = "aggregation_method"
   ) %>%
   filter(!is.infinite(value) & !is.nan(value)) %>%
-  mutate(calculation_level = "indicators' or sectors' PiN at area level")
+  mutate(calculation_level = "Area level PiN")
 
-df_irq_ocha_pin <-
-  read.csv(paste0(file_paths$input_dir, "/irq_pins_2022.csv"))
-
-df_irq_hno_pin <- df_irq_ocha_pin %>%
-  filter(sector == "itc") %>%
-  group_by(adm0_name) %>%
-  summarize(value = sum(pin, na.rm = TRUE)) %>%
-  mutate(
-    aggregation_method = "HNO 2022 Intersectoral PiN",
-    calculation_level = "HNO 2022 Intersectoral PiN"
+df_ocha_pin <- read_csv(
+  file.path(
+    file_paths$agg_dir,
+    "2022_sectoral_pins.csv"
+  )
+) %>%
+  filter(
+    adm0_pcode %in% c("IRQ", "SOM", "SYR")
   )
 
-df_irq_cluster_pin <- df_irq_ocha_pin %>%
-  filter(sector != "itc") %>%
+df_hno_pin <- df_ocha_pin %>%
+  filter(
+    sector_group == "intersectoral"
+  ) %>%
+  group_by(
+    adm0_name
+  ) %>%
+  summarize(
+    value = sum(pin, na.rm = TRUE)
+  ) %>%
+  mutate(
+    aggregation_method = "HNO 2022 intersectoral PiN",
+    calculation_level = "HNO 2022 intersectoral PiN"
+  )
+
+df_cluster_pin <- df_ocha_pin %>%
+  filter(
+    sector_group == "sectoral"
+  ) %>%
   group_by(
     adm0_name,
+    adm1_name,
     adm2_name,
-    population_group
+    adm3_name,
+    population_group,
   ) %>%
-  summarize(value = max(pin, na.rm = TRUE)) %>%
-  group_by(adm0_name) %>%
-  summarize(value = sum(value, na.rm = TRUE)) %>%
-  mutate(
-    aggregation_method = "Max of Cluster calculated PiN",
-    calculation_level = "Max of Cluster calculated PiN"
-  )
-
-df_syr_ocha_pin <-
-  read.csv(paste0(file_paths$input_dir, "/syr_pins_2022.csv"))
-
-df_syr_hno_pin <- df_syr_ocha_pin %>%
-  filter(sector == "intersectoral") %>%
-  group_by(adm0_name) %>%
-  summarize(value = sum(pin, na.rm = TRUE)) %>%
-  mutate(
-    aggregation_method = "HNO 2022 Intersectoral PiN",
-    calculation_level = "HNO 2022 Intersectoral PiN"
-  )
-
-df_syr_cluster_pin <- df_syr_ocha_pin %>%
-  filter(sector != "intersectoral") %>%
+  summarize(
+    value = max(pin, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
   group_by(
-    adm0_name,
-    adm3_name
+    adm0_name
   ) %>%
-  summarize(value = max(pin, na.rm = TRUE)) %>%
-  group_by(adm0_name) %>%
-  summarize(value = sum(value, na.rm = TRUE)) %>%
-  mutate(
-    aggregation_method = "Max of Cluster calculated PiN",
-    calculation_level = "Max of Cluster calculated PiN"
-  )
-
-df_som_ocha_pin <-
-  read.csv(paste0(file_paths$input_dir, "/som_pins_2022.csv"))
-
-df_som_hno_pin <- df_som_ocha_pin %>%
-  filter(sector == "intersectoral") %>%
-  group_by(adm0_name) %>%
-  summarize(value = sum(pin, na.rm = TRUE)) %>%
-  mutate(
-    aggregation_method = "HNO 2022 Intersectoral PiN",
-    calculation_level = "HNO 2022 Intersectoral PiN"
-  )
-
-df_som_cluster_pin <- df_som_ocha_pin %>%
-  filter(sector != "intersectoral") %>%
-  group_by(
-    adm0_name,
-    adm2_name,
-    population_group
+  summarize(
+    value = sum(value, na.rm = TRUE)
   ) %>%
-  summarize(value = max(pin, na.rm = TRUE)) %>%
-  group_by(adm0_name) %>%
-  summarize(value = sum(value, na.rm = TRUE)) %>%
   mutate(
-    aggregation_method = "Max of Cluster calculated PiN",
-    calculation_level = "Max of Cluster calculated PiN"
+    aggregation_method = "Option 1 (no adjustment)",
+    calculation_level = "Option 1 (no adjustment)"
   )
 
 # filtering the population to only area/population groups that have PiNs
@@ -289,8 +260,8 @@ df_pops <- df %>%
   ) %>%
   summarize(value = max(target_population, na.rm = TRUE)) %>%
   mutate(
-    aggregation_method = "Total Targetted Population",
-    calculation_level = "Total Targetted Population"
+    aggregation_method = "Targeted population",
+    calculation_level = "Targeted population"
   )
 
 pin_all <-
@@ -306,66 +277,30 @@ pin_all <-
   ) %>%
   summarize(value = sum(value, na.rm = TRUE)) %>%
   rbind(
-    df_syr_hno_pin,
-    df_irq_hno_pin,
-    df_som_hno_pin,
-    df_syr_cluster_pin,
-    df_irq_cluster_pin,
-    df_som_cluster_pin
+    df_hno_pin,
+    df_cluster_pin
   ) %>%
   mutate(
     aggregation_method = case_when(
-      aggregation_method == "any_indicator_inneed" ~ paste0(
-        "households being ",
-        "in need for any indicator"
-      ),
-      aggregation_method == "two_indicator_inneed" ~ paste0(
-        "households being in need for at ",
-        "least two indicators"
-      ),
-      aggregation_method == "hh_sectoral_max_mean" ~ paste0(
-        "max of sectoral severity which ",
-        "is calculated from mean of their sectoral indicators"
-      ),
-      aggregation_method == "mean_max_25" ~ paste0(
-        "mean of 25% of indicators", " with maximum severity"
-      ),
-      aggregation_method == "median_max_25" ~ paste0(
-        "median of 25% of indicators ",
-        "with maximum severity"
-      ),
-      aggregation_method == "mean_max_50" ~ paste0(
-        "mean of 50% of indicators ",
-        "with maximum severity"
-      ),
-      aggregation_method == "median_max_50" ~ paste0(
-        "median of 50% of indicators ",
-        "with maximum severity"
-      ),
-      aggregation_method == "mean_max_75" ~ paste0(
-        "mean of 75% of indicators ",
-        "with maximum severity"
-      ),
-      aggregation_method == "median_max_75" ~ paste0(
-        "median of 75% of indicators ",
-        "with maximum severity"
-      ),
-      aggregation_method == "mean_all" ~ "mean of all indicators' severity",
-      aggregation_method == "median_all" ~ "median of all indicators' severity",
-      aggregation_method == "area_pin_indicator_max" ~ paste0(
-        "max of all ",
-        "indicators' PiN"
-      ),
-      aggregation_method == "area_pin_indicator_mean" ~ paste0(
-        "mean of all ",
-        "indicators' PiN"
-      ),
-      aggregation_method == "area_pin_sector_mean" ~ "mean of all sectors' PiN",
+      aggregation_method == "any_indicator_inneed" ~ "In need any indicator",
+      aggregation_method == "two_indicator_inneed" ~ "In need 2+ indicators",
+      aggregation_method == "mean_max_25" ~ "Mean (top 25%)",
+      aggregation_method == "median_max_25" ~ "Median (top 25%)",
+      aggregation_method == "mean_max_50" ~ "Mean (top 50%)",
+      aggregation_method == "median_max_50" ~ "Median (top 50%)",
+      aggregation_method == "mean_max_75" ~ "Mean (top 75%)",
+      aggregation_method == "median_max_75" ~ "Median (top 75%)",
+      aggregation_method == "mean_all" ~ "Mean (100%)",
+      aggregation_method == "median_all" ~ "Median (100%)",
+      aggregation_method == "area_pin_indicator_max" ~ "Max (indicator PiNs)",
+      aggregation_method == "area_pin_indicator_mean" ~ "Mean (indicator PiNs)",
+      aggregation_method == "area_pin_sector_mean" ~ "Mean (sector PiNs)",
       TRUE ~ aggregation_method
     ),
     value = round(value / 1000000, 2)
   ) %>%
-  arrange(adm0_name, desc(value))
+  arrange(adm0_name, desc(value)) %>%
+  filter(aggregation_method != "hh_sectoral_max_mean")
 
 bar_chart <-
   ggplot(
@@ -377,7 +312,11 @@ bar_chart <-
       label = paste0(value, "M")
     )
   ) +
-  facet_wrap(~adm0_name, strip.position = "bottom", scales = "free_x") +
+  facet_wrap(
+    ~adm0_name,
+    strip.position = "bottom",
+    scales = "free_x"
+  ) +
   geom_col() +
   geom_text(
     position = position_identity(),
@@ -390,36 +329,49 @@ bar_chart <-
     x = "",
     y = "PIN",
     title = paste0(
-      "Option3: Comparison of HH  severity aggregation vs indicator pin vs ",
-      "sectoral pin from Iraq MSNA dataset"
+      "Option 3: Comparison of HH severity aggregation, indicator PiN, ",
+      "and sectoral PiN"
     )
   ) +
   theme_light() +
-  scale_y_continuous(labels = scales::comma, expand = expansion(c(0, .2))) +
+  scale_y_continuous(
+    labels = function(x) paste0(x, "M"),
+    expand = expansion(c(0, .2))
+  ) +
   scale_x_discrete(
     labels = function(x) {
       str_wrap(x, width = 35)
     }
   ) +
   scale_fill_manual(
-    values = c("#FFE0B2", "#00E676", "#D1C4E9", "#2154FF", "#B00020")
+    values = c("#18998F", "#78D9D1", "#0063B3", "#66B0EC", "#000000")
   ) +
   theme(
     plot.title = element_text(
       face = "bold",
       size = 22,
-      colour = "#134373",
-      margin = margin(10, 10, 30, 10, "pt")
+      margin = margin(10, 10, 30, 10, "pt"),
+      family = "Roboto"
     ),
-    axis.text = element_text(face = "bold", size = 10),
-    legend.text = element_text(size = 12),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
     legend.position = "bottom",
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     panel.background = element_rect(fill = "transparent"),
     legend.background = element_rect(fill = "transparent"),
     legend.box.background = element_rect(fill = "transparent"),
-    strip.text = element_text(size = 16)
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
 
 ggsave(

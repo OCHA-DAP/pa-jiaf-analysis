@@ -134,7 +134,9 @@ df_results %>%
       group = n_indicators
     )
   ) +
-  geom_boxplot() +
+  geom_boxplot(
+    color = "#1EBFB3"
+  ) +
   geom_point(
     data = df_crit_max,
     size = 4,
@@ -182,12 +184,39 @@ df_results %>%
     caption = "Critical indicators PiN calculated from all critical indicators"
   ) +
   theme(
-    plot.background = element_rect(fill = "white")
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_sectoral_pin_sampling_plot.png"
   ),
   height = 10,
@@ -251,7 +280,7 @@ df_prepped %>%
   ) +
   geom_bar(
     stat = "identity",
-    fill = "#ef6666"
+    fill = "#1EBFB3"
   ) +
   facet_wrap(
     ~adm0_name,
@@ -273,12 +302,42 @@ df_prepped %>%
     y = "",
     x = "# of times indicator PiN was maximum",
     title = "Times an indicator PiN was maximum PiN in calculation"
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
 
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_indicator_max_times.png"
   ),
   height = 10,
@@ -313,7 +372,10 @@ df_max_pct %>%
       y = reorder(adm0_name, pct_max_pins)
     )
   ) +
-  geom_bar(stat = "identity") +
+  geom_bar(
+    stat = "identity",
+    fill = "#1EBFB3"
+  ) +
   scale_x_continuous(
     labels = scales::percent_format()
   ) +
@@ -325,11 +387,41 @@ df_max_pct %>%
     y = "",
     x = "% of indicator PiNs",
     title = "% of indicator PiNs ever used in max calculation"
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_indicator_max_pct_pins.png"
   ),
   height = 5,
@@ -340,6 +432,7 @@ df_max_pct %>%
   write_csv(
     file.path(
       file_paths$output_dir,
+      "datasets",
       "2022_indicator_max_pct_pins.csv"
     )
   )
