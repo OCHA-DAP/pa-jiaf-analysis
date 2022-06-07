@@ -207,7 +207,7 @@ cluster_df <-
         "shelter and nfi",
         "sn",
         "nfi"
-      ) ~ "shl",
+      ) ~ "Shelter",
       sector %in% c("wash", "wa", "wsh", "eha") ~ "WASH",
       sector %in% c(
         "refugees",

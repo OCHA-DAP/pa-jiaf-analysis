@@ -1,4 +1,6 @@
 library(tidyverse)
+library(tidytext)
+
 source(here::here("99_helpers", "helpers.R"))
 
 file_paths <- get_paths_analysis()
@@ -6,6 +8,7 @@ file_paths <- get_paths_analysis()
 df <- read_csv(
   file.path(
     file_paths$output_dir,
+    "datasets",
     "2022_hno_pin_cluster_totals.csv"
   )
 ) %>%
@@ -103,59 +106,90 @@ df_outliers %>%
   ) %>%
   summarize(
     `upper outlier` = sum(is_upper_outlier, na.rm = TRUE) / n(),
-    `lower outlier` = sum(is_lower_outlier, na.rm = TRUE) / n()
+    `lower outlier` = sum(is_lower_outlier, na.rm = TRUE) / n(),
+    `any outlier` = `upper outlier` + `lower outlier`
   ) %>%
   pivot_longer(
     cols = matches("(upper|lower) outlier"),
     names_to = "type",
     values_to = "value"
   ) %>%
-  filter(value != 0) %>%
-  ggplot(aes(x = sector, y = value, fill = type)) +
+  ggplot(
+    aes(
+      x = reorder_within(
+        sector,
+        `any outlier`,
+        adm0_pcode
+      ),
+      y = value,
+      fill = type
+    )
+  ) +
   geom_col() +
-  facet_wrap(~adm0_pcode, scales = "free_x") +
+  facet_wrap(
+    ~adm0_pcode,
+    scales = "free_y"
+  ) +
+  coord_flip() +
   scale_y_continuous(
     labels = scales::percent_format()
   ) +
   labs(
-    title = paste0(
-      "Percentage of sectors being an outlier per ",
-      "lowest unit of analysis"
+    title = "Percentage of sectors identified as outliers",
+    subtitle = "Sectoral PiN < or > 2 std. dev. from mean sectoral PiN",
+    y = "% of lowest unit of analysis with outliers",
+    x = "",
+    caption = paste0(
+      "Lowest unit of analysis is the most disaggregated PiN available, ",
+      "such as PiN per population group at the admin 2 level."
     ),
-    y = "Percentage of lowest unit of analysis having outliers",
-    x = "Sectors with outliers",
     fill = ""
   ) +
+  scale_fill_manual(
+    values = c("#007CE0", "#1EBFB3")
+  ) +
+  theme_minimal() +
   theme(
     plot.title = element_text(
       face = "bold",
       size = 22,
-      colour = "#134373",
-      margin = margin(10, 10, 30, 10, "pt"),
-      hjust = 0.5
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
     ),
     legend.position = "bottom",
-    axis.title.x = element_text(
-      face = "bold",
-      size = 12,
-      colour = "#134373",
-      margin = margin(20, 10, 10, 10, "pt")
-    ),
-    axis.title.y = element_text(
-      face = "bold",
-      size = 12,
-      colour = "#134373",
-      margin = margin(10, 20, 10, 10, "pt")
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
     )
+  ) +
+  scale_x_reordered(
+    labels = function(x) str_remove(x, "__(.*)")
   )
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_percentage_of_outlier_frequency_per_sector.png"
   ),
-  height = 13,
-  width = 20
+  height = 10,
+  width = 11
 )
 
 df_outliers %>%
@@ -172,8 +206,9 @@ df_outliers %>%
   group_by(adm0_pcode) %>%
   summarize(
     `upper outlier` = sum(is_upper_outlier, na.rm = TRUE) / n(),
-    `lower outlier` = sum(is_lower_outlier, na.rm = TRUE) / n()
-  ) %>%
+    `lower outlier` = sum(is_lower_outlier, na.rm = TRUE) / n(),
+    .groups =
+    ) %>%
   pivot_longer(
     cols = matches("(upper|lower) outlier"),
     names_to = "type",
@@ -187,40 +222,57 @@ df_outliers %>%
   ) +
   labs(
     title = "Percentage of lowest unit of analysis having at least one outlier",
-    y = "Percentage of lowest unit of analysis having at least one outlier",
-    x = "Country",
-    caption = "*UKR, SDN, PSE and MOZ don't have any outliers",
-    fill = "Type of outlier"
+    subtitle = "Sectoral PiN < or > 2 std. dev. from mean sectoral PiN",
+    y = "% of lowest unit of analysis with outliers",
+    x = "",
+    caption = paste0(
+      "Lowest unit of analysis is the most disaggregated PiN available, ",
+      "such as PiN per population group at the admin 2 level."
+    ),
+    fill = ""
   ) +
+  scale_fill_manual(
+    values = c("#007CE0", "#1EBFB3")
+  ) +
+  theme_minimal() +
   theme(
     plot.title = element_text(
       face = "bold",
       size = 22,
-      colour = "#134373",
-      margin = margin(10, 10, 30, 10, "pt"),
-      hjust = 0.5
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
     ),
-    axis.title.x = element_text(
-      face = "bold",
-      size = 12,
-      colour = "#134373",
-      margin = margin(20, 10, 10, 10, "pt")
+    plot.background = element_rect(
+      fill = "white"
     ),
-    axis.title.y = element_text(
+    axis.text = element_text(
       face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
       size = 12,
-      colour = "#134373",
-      margin = margin(10, 20, 10, 10, "pt")
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
     )
   )
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_percentage_of_times_sectors_being_outlier.png"
   ),
-  height = 13,
-  width = 20
+  height = 8,
+  width = 12
 )
 
 df_max_min %>%
@@ -233,50 +285,87 @@ df_max_min %>%
   mutate(
     perc_of_pop = value / affected_population
   ) %>%
-  ggplot(aes(x = perc_of_pop, fill = summary_mode)) +
-  geom_density(na.rm = TRUE) +
+  ggplot() +
+  geom_density(
+    aes(
+      x = perc_of_pop,
+      y = ..scaled..,
+      fill = summary_mode
+    ),
+    fill = "#1EBFB3",
+    na.rm = TRUE
+  ) +
+  geom_text(
+    data = data.frame(
+      x = c(0.05, 0.1, 0.05),
+      y = c(0.7, 0.7, 0.85),
+      adm0_pcode = c("MLI", "MOZ", "SDN"),
+      label = c(
+        "Many units have near 100%\nof population as PiN",
+        "Many units have near 0%\nof population as PiN",
+        "Mix of units with PiN near\n25% or 100% of population"
+      )
+    ),
+    mapping = aes(
+      x = x,
+      y = y,
+      label = label
+    ),
+    family = "Roboto",
+    hjust = 0
+  ) +
   facet_wrap(~adm0_pcode, scales = "fixed") +
   scale_x_continuous(
     labels = scales::percent_format(accuracy = 1)
   ) +
   labs(
     y = "Density of Max PiN",
-    title = "Distribution of Max PiN as percentage of the affected population",
-    x = "Percentage of Max PiN of the affected population"
+    title = "Distribution of max PiN as % of the affected population",
+    x = "Max PiN % of the affected population"
   ) +
   scale_fill_manual(
     values = "#FFE0B2"
   ) +
+  theme_minimal() +
   theme(
     plot.title = element_text(
       face = "bold",
       size = 22,
-      colour = "#134373",
-      margin = margin(10, 10, 30, 10, "pt"),
-      hjust = 0.5
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
     ),
-    legend.position = "none",
-    axis.title.x = element_text(
-      face = "bold",
-      size = 12,
-      colour = "#134373",
-      margin = margin(20, 10, 10, 10, "pt")
+    plot.background = element_rect(
+      fill = "white"
     ),
-    axis.title.y = element_text(
+    axis.text = element_text(
       face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
       size = 12,
-      colour = "#134373",
-      margin = margin(10, 20, 10, 10, "pt")
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
     )
   )
+
 
 ggsave(
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
     "2022_max_pin_density.png"
   ),
-  height = 13,
-  width = 20
+  height = 10,
+  width = 14
 )
 
 # difference between second max pin and min pin to max pin as
@@ -430,9 +519,22 @@ df_max_min %>%
       "Second max sector"
     )
   ) %>%
-  ggplot(aes(x = sectors, fill = modes)) +
-  geom_histogram(stat = "count", position = "dodge") +
-  facet_wrap(~adm0_pcode, scales = "free") +
+  ggplot(
+    aes(
+      x = reorder_within(
+        sectors,
+      ),
+      fill = modes
+    )
+  ) +
+  geom_histogram(
+    stat = "count",
+    position = "stack"
+  ) +
+  facet_wrap(
+    ~adm0_pcode,
+    scales = "free"
+  ) +
   labs(
     y = "Frequency of lowest unit of analysis",
     title = paste0(
@@ -475,4 +577,177 @@ ggsave(
   ),
   height = 13,
   width = 20
+)
+
+################################
+#### SECTORS FREQUENTLY MAX ####
+################################
+
+df %>%
+  group_by(
+    adm0_pcode,
+    adm_pcode,
+    pop_group
+  ) %>%
+  mutate(
+    max_pin = pin == max(pin)
+  ) %>%
+  group_by(
+    adm0_pcode,
+    sector
+  ) %>%
+  summarize(
+    max_times = sum(max_pin),
+    .groups = "drop"
+  ) %>%
+  ggplot(
+    aes(
+      y = reorder_within(
+        sector,
+        max_times,
+        adm0_pcode
+      ),
+      x = max_times
+    )
+  ) +
+  geom_col(
+    fill = "#1EBFB3"
+  ) +
+  facet_wrap(
+    ~adm0_pcode,
+    scales = "free"
+  ) +
+  scale_y_reordered(
+    labels = function(x) str_remove(x, "__(.*)")
+  ) +
+  scale_x_continuous(
+    breaks = scales::pretty_breaks()
+  ) +
+  labs(
+    title = "Frequency of sectors being the max PiN",
+    y = "",
+    x = "# of times sectoral PiN was the max PiN"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
+    "2022_freq_sector_max.png"
+  ),
+  height = 8,
+  width = 12
+)
+
+#####################################
+#### DISTRIBUTION OF MAX AND MIN ####
+#####################################
+
+df_max_min %>%
+  ungroup() %>%
+  mutate(
+    `2nd max PiN` = second_max_pin / max_pin,
+    `Min PiN` = min_pin / max_pin
+  ) %>%
+  select(adm0_pcode, ends_with(" PiN")) %>%
+  pivot_longer(-adm0_pcode) %>%
+  ggplot() +
+  geom_density(
+    aes(
+      x = value,
+      group = name,
+      fill = name,
+      y = ..scaled..
+    ),
+    alpha = 0.6,
+  ) +
+  facet_wrap(
+    ~adm0_pcode
+  ) +
+  scale_x_continuous(
+    labels = scales::percent_format()
+  ) +
+  scale_fill_manual(
+    values = c("#1EBFB3", "#007CE0")
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  ) +
+  labs(
+    y = "Density",
+    x = "% of max PiN",
+    fill = "",
+    title = "Distribution of 2nd max PiN and min PiN as % of max PiN",
+    subtitle = "Density measured across lowest units of analysis",
+    caption = paste0(
+      "Lowest unit of analysis is the most disaggregated PiN available, ",
+      "such as PiN per population group at the admin 2 level."
+    )
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "sectoral_pins",
+    "2022_distribution_min_2nd_max_pins.png"
+  ),
+  height = 8,
+  width = 12
 )
