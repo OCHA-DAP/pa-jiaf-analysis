@@ -100,30 +100,39 @@ df_outliers <- df %>%
   filter(!is.na(stdv)) %>%
   mutate(
     is_upper_outlier = ifelse(pin > (2 * stdv) + mean, 1, 0),
-    is_lower_outlier = ifelse(pin < mean - (2 * stdv), 1, 0),
-    is_outlier = ifelse(is_upper_outlier == 1 | is_lower_outlier == 1, 1, 0)
+    is_lower_outlier = ifelse(pin < mean - (2 * stdv), 1, 0)
   )
 
-df_outliers %>%
+write_csv(
+  df_outliers,
+  file.path(
+    file_paths$output_dir,
+    "datasets",
+    "2022_sectors_being_outlier.csv"
+  )
+)
+
+df_perc_upp_low <- df_outliers %>%
   group_by(
     adm0_pcode,
     sector
   ) %>%
   summarize(
     `upper outlier` = sum(is_upper_outlier, na.rm = TRUE) / n(),
-    `lower outlier` = sum(is_lower_outlier, na.rm = TRUE) / n(),
-    `any outlier` = `upper outlier` + `lower outlier`
+    `lower outlier` = sum(is_lower_outlier, na.rm = TRUE) / n()
   ) %>%
   pivot_longer(
     cols = matches("(upper|lower) outlier"),
     names_to = "type",
     values_to = "value"
-  ) %>%
+  )
+
+df_perc_upp_low %>%
   ggplot(
     aes(
       x = reorder_within(
         sector,
-        `any outlier`,
+        value,
         adm0_pcode
       ),
       y = value,
@@ -190,14 +199,26 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_percentage_of_outlier_frequency_per_sector.png"
   ),
   height = 10,
   width = 11
 )
 
-df_outliers %>%
+write_csv(
+  df_perc_upp_low,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_percentage_of_outlier_frequency_per_sector.csv"
+  )
+)
+
+# overall percentage of outlier per country
+df_overall_outlier <- df_outliers %>%
   group_by(
     adm0_pcode,
     adm_pcode,
@@ -218,7 +239,9 @@ df_outliers %>%
     cols = matches("(upper|lower) outlier"),
     names_to = "type",
     values_to = "value"
-  ) %>%
+  )
+
+df_overall_outlier %>%
   ggplot(aes(x = reorder(adm0_pcode, +value), y = value, fill = type)) +
   geom_col() +
   coord_flip() +
@@ -273,14 +296,26 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_percentage_of_times_sectors_being_outlier.png"
   ),
   height = 8,
   width = 12
 )
 
-df_max_min %>%
+write_csv(
+  df_overall_outlier,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_percentage_of_times_sectors_being_outlier.csv"
+  )
+)
+
+# percentage density of max pin over affected population
+df_max_density <- df_max_min %>%
   pivot_longer(
     cols = matches("pin$"),
     names_to = "summary_mode",
@@ -289,7 +324,9 @@ df_max_min %>%
   filter(!is.na(value), affected_population > 0, summary_mode == "max_pin") %>%
   mutate(
     perc_of_pop = value / affected_population
-  ) %>%
+  )
+
+df_max_density %>%
   ggplot() +
   geom_density(
     aes(
@@ -361,21 +398,31 @@ df_max_min %>%
     )
   )
 
-
 ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_max_pin_density.png"
   ),
   height = 10,
   width = 14
 )
 
+write_csv(
+  df_max_density,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_max_pin_density.csv"
+  )
+)
+
 # difference between second max pin and min pin to max pin as
 # percentage of the total affected population
-df_max_min %>%
+df_diff_max_min <- df_max_min %>%
   mutate(
     diff_second_max = max_pin - second_max_pin,
     diff_min_max = max_pin - min_pin
@@ -400,7 +447,9 @@ df_max_min %>%
   ) %>%
   summarize(
     value = sum(value) / sum(affected_population)
-  ) %>%
+  )
+
+df_diff_max_min %>%
   ggplot(aes(y = value, x = summary_mode, fill = "")) +
   geom_col() +
   coord_flip() +
@@ -451,11 +500,22 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_perc_diff_max_min_pin.png"
   ),
   height = 13,
   width = 20
+)
+
+write_csv(
+  df_diff_max_min,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_perc_diff_max_min_pin.csv"
+  )
 )
 
 ## density of percentage of PiN for the samll sectors
@@ -528,15 +588,26 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_percentage_pin_density_subpop_sectors.png"
   ),
   height = 13,
   width = 20
 )
 
+write_csv(
+  df_small_clusters,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_percentage_pin_density_subpop_sectors.csv"
+  )
+)
+
 # frequency of sectors being max pin
-df_max_min %>%
+df_max_sector_freq <- df_max_min %>%
   pivot_longer(
     cols = matches("max_sector"),
     values_to = "sectors",
@@ -547,7 +618,9 @@ df_max_min %>%
       "Max sector",
       "Second max sector"
     )
-  ) %>%
+  )
+
+df_max_sector_freq %>%
   ggplot(
     aes(
       x = sectors,
@@ -556,7 +629,7 @@ df_max_min %>%
   ) +
   geom_histogram(
     stat = "count",
-    position = "stack"
+    position = "dodge"
   ) +
   facet_wrap(
     ~adm0_pcode,
@@ -572,47 +645,65 @@ df_max_min %>%
     fill = ""
   ) +
   scale_fill_manual(
-    values = c("#4d64ce", "#bfc7f9")
+    values = c("#1EBFB3", "#007CE0")
   ) +
+  theme_minimal() +
   theme(
     plot.title = element_text(
       face = "bold",
       size = 22,
-      colour = "#134373",
-      margin = margin(10, 10, 30, 10, "pt"),
-      hjust = 0.5
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
     ),
-    # legend.position = "bottom",
-    axis.title.x = element_text(
-      face = "bold",
-      size = 12,
-      colour = "#134373",
-      margin = margin(20, 10, 10, 10, "pt")
+    plot.background = element_rect(
+      fill = "white"
     ),
-    axis.title.y = element_text(
+    axis.text = element_text(
       face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
       size = 12,
-      colour = "#134373",
-      margin = margin(10, 20, 10, 10, "pt")
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
     )
-  )
+  ) +
+  coord_flip()
 
 ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_frequency_of_sectors_being_max.png"
   ),
   height = 13,
   width = 20
 )
 
+write_csv(
+  df_max_sector_freq,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_frequency_of_sectors_being_max.csv"
+  )
+)
 ################################
 #### SECTORS FREQUENTLY MAX ####
 ################################
 
-df %>%
+df_max_frequency <- df %>%
   group_by(
     adm0_pcode,
     adm_pcode,
@@ -628,7 +719,9 @@ df %>%
   summarize(
     max_times = sum(max_pin),
     .groups = "drop"
-  ) %>%
+  )
+
+df_max_frequency %>%
   ggplot(
     aes(
       y = reorder_within(
@@ -691,25 +784,38 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_freq_sector_max.png"
   ),
   height = 8,
   width = 12
 )
 
+write_csv(
+  df_max_frequency,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_freq_sector_max.csv"
+  )
+)
+
 #####################################
 #### DISTRIBUTION OF MAX AND MIN ####
 #####################################
 
-df_max_min %>%
+df_max_min_distribution <- df_max_min %>%
   ungroup() %>%
   mutate(
     `2nd max PiN` = second_max_pin / max_pin,
     `Min PiN` = min_pin / max_pin
   ) %>%
   select(adm0_pcode, ends_with(" PiN")) %>%
-  pivot_longer(-adm0_pcode) %>%
+  pivot_longer(-adm0_pcode)
+
+df_max_min_distribution %>%
   ggplot() +
   geom_density(
     aes(
@@ -774,9 +880,20 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_distribution_min_2nd_max_pins.png"
   ),
   height = 8,
   width = 12
+)
+
+write_csv(
+  df_max_min_distribution,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_distribution_min_2nd_max_pins.csv"
+  )
 )
