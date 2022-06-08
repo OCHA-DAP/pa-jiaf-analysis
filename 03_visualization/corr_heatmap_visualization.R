@@ -67,6 +67,16 @@ ggsave(
   width = 5, height = 5
 )
 
+write_csv(
+  df_pins %>% filter(sector_group == "sectoral"),
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "pin_totals",
+    "datasets",
+    "2022_hno_pin_totals.csv"
+  )
+)
 
 ######################
 #### CORRELATIONS ####
@@ -115,6 +125,20 @@ ggsave(
   plot = cluster_corr_all
 )
 
+write.csv(
+  cor(as.matrix(df_corr_all),
+    use = "pairwise.complete.obs"
+  ),
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "correlation",
+    "datasets",
+    "2022_hno_pin_cluster_corr_all.csv"
+  ),
+  row.names = TRUE
+)
+
 cluster_corr_all_pairs <- ggpairs(df_corr_all)
 
 ggsave(
@@ -159,6 +183,20 @@ ggsave(
   width = 5,
   height = 5,
   plot = cluster_corr_all_log
+)
+
+write.csv(
+  cor(as.matrix(df_corr_all_log),
+    use = "pairwise.complete.obs"
+  ),
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "correlation",
+    "datasets",
+    "2022_hno_pin_cluster_corr_all_log.csv"
+  ),
+  row.names = TRUE
 )
 
 cluster_corr_all_pairs_log <- ggpairs(df_corr_all_log)
@@ -217,6 +255,20 @@ ggsave(
   plot = cluster_corr_countries
 )
 
+write.csv(
+  cor(
+    as.matrix(df_corr_countries),
+    use = "pairwise.complete.obs"
+  ),
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "correlation",
+    "datasets",
+    "2022_hno_pin_cluster_corr_countries.csv"
+  ),
+  row.names = TRUE
+)
 # ggpairs doens't work because it uses cor.test which can't do
 # pairwise, I've checked the significance with psych::corr and some
 # are significant, some not. Have trouble plotting it though because
@@ -355,10 +407,21 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "pin_totals",
     "2022_hno_pin_percent_all.png"
   ),
   width = 10, height = 7, plot = fig_pin_all
+)
+
+write_csv(
+  df_violin,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "pin_totals",
+    "datasets",
+    "2022_hno_pin_percent_all.csv"
+  )
 )
 
 # heat map version
@@ -369,7 +432,9 @@ fig_heatmap <- df_sectoral %>%
   ) %>%
   mutate(
     sector = factor(sector, levels = levels(df_violin$sector))
-  ) %>%
+  )
+
+fig_heatmap %>%
   ggplot() +
   geom_tile(
     aes(
@@ -420,10 +485,20 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "pin_totals",
     "2022_hno_pin_percent_countries.png"
   ),
   width = 10,
-  height = 7,
-  plot = fig_heatmap
+  height = 7
+)
+
+write_csv(
+  fig_heatmap,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "pin_totals",
+    "datasets",
+    "2022_hno_pin_percent_countries.csv"
+  )
 )

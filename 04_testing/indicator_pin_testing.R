@@ -76,9 +76,11 @@ df_indicator_pin <- max_df %>%
   ) %>%
   mutate(pin_calculation = "Max of Indicator PiN")
 
-df_indicator_pin %>%
+df_compr_sector_indicator <- df_indicator_pin %>%
   bind_rows(df_sectors) %>%
-  filter(pin_calculation != "intersectoral") %>%
+  filter(pin_calculation != "intersectoral")
+
+df_compr_sector_indicator %>%
   mutate(
     pin_calculation = case_when(
       # pin_calculation == "intersectoral" ~ "HNO2022 PiN",
@@ -158,20 +160,33 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 3",
     "2022_indicator_pin_sectoral_pin.png"
   ),
   height = 6,
   width = 12
 )
 
-df_sectors %>%
+write_csv(
+  df_compr_sector_indicator,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 3",
+    "datasets",
+    "2022_indicator_pin_sectoral_pin.csv"
+  )
+)
+
+df_compr_jiaf_indicator <- df_sectors %>%
   filter(pin_calculation == "intersectoral") %>%
   left_join(df_indicator_pin %>%
     transmute(
       adm0_name,
       ind_pin = pin
-    )) %>%
+    ))
+
+df_compr_jiaf_indicator %>%
   mutate(pin_diff = round((ind_pin - pin) / 1000000, 2)) %>%
   ggplot(aes(
     y = reorder(adm0_pcode, pin_diff),
@@ -231,20 +246,33 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 3",
     "2022_absolute_compr_indicator_jiaf.png"
   ),
   height = 6,
   width = 16
 )
 
+write_csv(
+  df_compr_jiaf_indicator,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 3",
+    "datasets",
+    "2022_absolute_compr_indicator_jiaf.csv"
+  )
+)
+
 # absolute comparison between indicator PiN and sectoral PiN
-df_sectors %>%
+df_diff_indicator_sector <- df_sectors %>%
   filter(pin_calculation != "intersectoral") %>%
   left_join(df_indicator_pin %>%
     transmute(adm0_name,
       ind_pin = pin
-    )) %>%
+    ))
+
+df_diff_indicator_sector %>%
   mutate(pin_diff = ind_pin - pin) %>%
   ggplot(aes(
     y = reorder(adm0_pcode, pin_diff),
@@ -302,20 +330,33 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 3",
     "2022_absolute_compr_indicator_sectoral.png"
   ),
   height = 6,
   width = 14
 )
 
+write_csv(
+  df_diff_indicator_sector,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 3",
+    "datasets",
+    "2022_absolute_compr_indicator_sectoral.csv"
+  )
+)
+
 # percent comparison between indicator PiN and sectoral PiN
-df_sectors %>%
+df_perc_indicator_sector <- df_sectors %>%
   filter(pin_calculation != "intersectoral") %>%
   left_join(df_indicator_pin %>%
     transmute(adm0_name,
       ind_pin = pin
-    )) %>%
+    ))
+
+df_perc_indicator_sector %>%
   mutate(
     pin_diff = round((ind_pin - pin) / pin, 2) * 100,
     pin_diff_label = pmax(pin_diff, -3)
@@ -387,9 +428,20 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 3",
     "2022_percent_compr_indicator_sectoral.png"
   ),
   height = 6,
   width = 12
+)
+
+write_csv(
+  df_perc_indicator_sector,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 3",
+    "datasets",
+    "2022_percent_compr_indicator_sectoral.csv"
+  )
 )

@@ -12,6 +12,7 @@ file_paths <- get_paths_analysis()
 df <- read_csv(
   file.path(
     file_paths$output_dir,
+    "datasets",
     "2022_hno_pin_cluster_totals.csv"
   )
 ) %>%
@@ -28,6 +29,7 @@ df <- read_csv(
 df_is <- read_csv(
   file.path(
     file_paths$output_dir,
+    "datasets",
     "2022_hno_pin_totals.csv"
   )
 ) %>%
@@ -93,7 +95,6 @@ max_pin <- function(df) {
         .groups = "drop"
       )
   }
-
   grouped_df
 }
 
@@ -148,17 +149,19 @@ results_df %>%
 
 # check PiN for level of disaggregation
 
-results_df %>%
+df_aggr_results <- results_df %>%
   group_by(
     adm0_pcode
   ) %>%
   mutate(
-    pin = pin / pin[1]
+    perc_pin_to_lowest = pin / pin[1]
   ) %>%
-  filter(agg_cols_n != 0) %>%
+  filter(agg_cols_n != 0)
+
+df_aggr_results %>%
   ggplot(
     aes(
-      y = pin,
+      y = perc_pin_to_lowest,
       x = agg_cols_n,
       fill = agg_cols_n
     )
@@ -222,16 +225,27 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_hno_max_test.png"
   ),
   height = 13,
   width = 8
 )
 
+write_csv(
+  df_aggr_results,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_hno_max_test.csv"
+  )
+)
+
 # difference between highest a lowest aggregation
 
-results_df %>%
+df_diff_highest_lowest <- results_df %>%
   group_by(
     adm0_pcode
   ) %>%
@@ -243,7 +257,9 @@ results_df %>%
     pin = pin[1] - pin[2],
     agg_diff = agg_cols_n[1] - agg_cols_n[2],
     .groups = "drop"
-  ) %>%
+  )
+
+df_diff_highest_lowest %>%
   ggplot(
     aes(
       x = pin,
@@ -310,16 +326,27 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_hno_max_test_absolute.png"
   ),
   height = 6.5,
   width = 10
 )
 
+write_csv(
+  df_diff_highest_lowest,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_hno_max_test_absolute.csv"
+  )
+)
+
 # difference between highest and lowest aggregation, as a percent
 
-results_df %>%
+df_perc_highest_lowest <- results_df %>%
   group_by(
     adm0_pcode
   ) %>%
@@ -333,7 +360,9 @@ results_df %>%
   ) %>%
   filter(
     adm0_pcode != "VEN"
-  ) %>%
+  )
+
+df_perc_highest_lowest %>%
   ggplot(
     aes(
       x = pin,
@@ -398,16 +427,26 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_hno_max_test_percent_change.png"
   ),
   height = 6.5,
   width = 11
 )
 
+write_csv(
+  df_perc_highest_lowest,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_hno_max_test_percent_change.csv"
+  )
+)
 
 # see drop in % based on # of agg groups
-results_df %>%
+df_perc_pin_drop <- results_df %>%
   group_by(
     adm0_pcode
   ) %>%
@@ -423,7 +462,9 @@ results_df %>%
   ) %>%
   filter(
     !is.na(agg_groups_n)
-  ) %>%
+  )
+
+df_perc_pin_drop %>%
   ggplot(
     aes(
       y = pin_change,
@@ -484,15 +525,26 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_hno_max_test_pct.png"
   ),
   height = 6,
   width = 7
 )
 
+write_csv(
+  df_perc_pin_drop,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_hno_max_test_pct.csv"
+  )
+)
+
 # max agg PiN with HRP
-results_df %>%
+df_compr_max_hrp23 <- results_df %>%
   group_by(
     adm0_pcode
   ) %>%
@@ -505,7 +557,9 @@ results_df %>%
   ) %>%
   mutate(
     pin_diff = pin - pin_hrp
-  ) %>%
+  )
+
+df_compr_max_hrp23 %>%
   ggplot() +
   geom_segment(
     aes(
@@ -568,14 +622,24 @@ results_df %>%
     )
   )
 
-
 ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_hno_max_vs_jiaf.png"
   ),
   height = 6,
   width = 8
+)
+
+write_csv(
+  df_compr_max_hrp23,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_hno_max_vs_jiaf.csv"
+  )
 )

@@ -250,26 +250,25 @@ df_cluster_pin <- df_ocha_pin %>%
   )
 
 # filtering the population to only area/population groups that have PiNs
-df_pops <- df %>%
-  group_by(adm0_name,
+df_all <- df %>%
+  group_by(
+    adm0_name,
     adm1_name,
     adm2_name,
     adm3_name,
-    population_group,
-    drop = TRUE
+    population_group
   ) %>%
   summarize(value = max(target_population, na.rm = TRUE)) %>%
   mutate(
     aggregation_method = "Targeted population",
     calculation_level = "Targeted population"
-  )
-
-pin_all <-
+  ) %>%
   rbind(
-    df_pops,
     area_pin,
     hh_summarized
-  ) %>%
+  )
+
+pin_all <- df_all %>%
   group_by(adm0_name,
     calculation_level,
     aggregation_method,
@@ -379,7 +378,7 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 3",
     "2022_hh_data_aggregations.png"
   ),
   bg = "transparent",
@@ -389,9 +388,11 @@ ggsave(
 )
 
 write_csv(
-  pin_all,
+  df_all,
   file.path(
     file_paths$output_dir,
+    "graphs",
+    "Option 3",
     "datasets",
     "2022_hh_data_aggregated_pin.csv"
   )

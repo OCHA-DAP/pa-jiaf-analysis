@@ -216,16 +216,27 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 3",
     "2022_sectoral_pin_sampling_plot.png"
   ),
   height = 10,
   width = 12
 )
 
+write_csv(
+  df_results,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 3",
+    "datasets",
+    "2022_sectoral_pin_sampling_plot.csv"
+  )
+)
+
 # plotting number of times an indicator is max
 
-df_prepped %>%
+df_max_frequency <- df_prepped %>%
   slice_max(
     pin
   ) %>%
@@ -244,12 +255,12 @@ df_prepped %>%
   mutate(
     indicator_desc_label = case_when( # nolint start
       indicator_desc == "IPC" ~ "IPC",
-      indicator_desc == "Prévalence en % de l’allaitement exclusif chez les enfants de 0-5 mois" ~ "% breastfeeding children",
-      indicator_desc == "%  d'épisodes  de paludisme" ~ "% malaria",
+      indicator_desc == "Pr<U+00E9>valence en % de l<U+2019>allaitement exclusif chez les enfants de 0-5 mois" ~ "% breastfeeding children",
+      indicator_desc == "%  d'<U+00E9>pisodes  de paludisme" ~ "% malaria",
       indicator_desc == "% of girls / women /boys /men  without access to GBV-related services." ~ "% access to GBV",
       indicator_desc == "Number of cases or incidence rates for selected diseases relevant to the local context (malaria, COVID, others outbreak prone diseases)" ~ "Disease incidence rate",
-      indicator_desc == "Cadre Harmonisé" ~ "IPC (CH)",
-      indicator_desc == "Afectación por conflicto armado" ~ "Affected by armed conflict",
+      indicator_desc == "Cadre Harmonis<U+00E9>" ~ "IPC (CH)",
+      indicator_desc == "Afectaci<U+00F3>n por conflicto armado" ~ "Affected by armed conflict",
       indicator_desc == "Pobreza multidimensional" ~ "Multidimensional poverty",
       indicator_desc == "Acceso a agua" ~ "Access to water",
       indicator_desc == "ipc" ~ "IPC",
@@ -271,7 +282,9 @@ df_prepped %>%
       TRUE ~ " "
     ),
     x_pct = 2 / n()
-  ) %>% # nolint end
+  ) # nolint end
+
+df_max_frequency %>%
   ggplot(
     aes(
       x = times_max,
@@ -332,16 +345,26 @@ df_prepped %>%
     )
   )
 
-
 ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 3",
     "2022_indicator_max_times.png"
   ),
   height = 10,
   width = 12
+)
+
+write_csv(
+  df_max_frequency,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 3",
+    "datasets",
+    "2022_indicator_max_times.csv"
+  )
 )
 
 # Percent of indicators used for max
@@ -421,18 +444,20 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 3",
     "2022_indicator_max_pct_pins.png"
   ),
   height = 5,
   width = 8
 )
 
-df_max_pct %>%
-  write_csv(
-    file.path(
-      file_paths$output_dir,
-      "datasets",
-      "2022_indicator_max_pct_pins.csv"
-    )
+write_csv(
+  df_max_pct,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 3",
+    "datasets",
+    "2022_indicator_max_pct_pins.csv"
   )
+)

@@ -11,6 +11,7 @@ file_paths <- get_paths_analysis()
 df_pins <- read.csv(
   file.path(
     file_paths$output_dir,
+    "datasets",
     "2022_hno_pin_totals.csv"
   )
 ) %>%
@@ -103,12 +104,23 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_hno_pin_totals.png"
   ),
   width = 3840,
   height = 2018,
   units = "px"
+)
+
+write_csv(
+  df_pins,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_hno_pin_totals.csv"
+  )
 )
 
 # difference with intersectoral
@@ -174,9 +186,24 @@ ggsave(
   file.path(
     file_paths$output_dir,
     "graphs",
-    "sectoral_pins",
+    "Option 1",
     "2022_hno_pct_difference.png"
   ),
   width = 6,
   height = 5
+)
+
+write_csv(
+  df_pins %>%
+    filter(sector_group != "JIAF 1.1") %>%
+    mutate(number_disagg = factor(number_disagg,
+      levels = 0:3
+    )),
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_hno_pct_difference.csv"
+  )
 )
