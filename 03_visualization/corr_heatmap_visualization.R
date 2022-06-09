@@ -110,7 +110,38 @@ cluster_corr_all <- cor(
   ggcorrplot(
     type = "lower",
     lab = TRUE,
-    lab_size = 2
+    lab_size = 2,
+    colors = c("#F2645A", "white", "#1EBFB3"),
+    title = "Sector correlations, disaggregated PiN"
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 16,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto",
+      hjust = 1
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 8,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
 
 ggsave(
@@ -120,8 +151,8 @@ ggsave(
     "correlation",
     "2022_hno_pin_cluster_corr_all.png"
   ),
-  width = 5,
-  height = 5,
+  width = 6,
+  height = 6,
   plot = cluster_corr_all
 )
 
@@ -240,8 +271,40 @@ cluster_corr_countries <- cor(
   ggcorrplot(
     type = "lower",
     lab = TRUE,
-    lab_size = 2
+    lab_size = 2,
+    colors = c("#F2645A", "white", "#1EBFB3"),
+    title = "Sector correlations, country summed PiN"
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 16,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto",
+      hjust = 1
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 8,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
+
 
 ggsave(
   file.path(
@@ -250,8 +313,8 @@ ggsave(
     "correlation",
     "2022_hno_pin_cluster_corr_countries.png"
   ),
-  width = 5,
-  height = 5,
+  width = 6,
+  height = 6,
   plot = cluster_corr_countries
 )
 
