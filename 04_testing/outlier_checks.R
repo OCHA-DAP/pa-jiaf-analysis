@@ -149,7 +149,7 @@ df_perc_upp_low %>%
     labels = scales::percent_format()
   ) +
   labs(
-    title = "Percentage of sectors identified as outliers",
+    title = "% of sectors identified as outliers",
     subtitle = "Sectoral PiN < or > 2 std. dev. from mean sectoral PiN",
     y = "% of lowest unit of analysis with outliers",
     x = "",
@@ -249,7 +249,7 @@ df_overall_outlier %>%
     labels = scales::percent_format()
   ) +
   labs(
-    title = "Percentage of lowest unit of analysis having at least one outlier",
+    title = "% of lowest unit of analysis having at least one outlier",
     subtitle = "Sectoral PiN < or > 2 std. dev. from mean sectoral PiN",
     y = "% of lowest unit of analysis with outliers",
     x = "",
@@ -461,9 +461,9 @@ df_diff_max_min %>%
   ) +
   labs(
     x = "",
-    y = "Percentage of the total affected population",
+    y = "% of the total affected population",
     title = paste0(
-      "Percentage difference between max PiN and second max PiN ",
+      "% difference between max PiN and second max PiN ",
       "as well as min PiN per country"
     )
   ) +

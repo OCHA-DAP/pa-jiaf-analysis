@@ -379,7 +379,7 @@ df_perc_indicator_sector %>%
   labs(
     y = "",
     x = paste(
-      "Percent of increase or decrease of",
+      "% of increase or decrease of",
       "indicator PiN compared to sectoral PiN"
     ),
     title = paste(

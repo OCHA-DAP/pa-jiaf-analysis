@@ -370,7 +370,7 @@ fig_pin_all <- df_violin %>%
     y = "",
     title = "Sectoral PiN as % of JIAF 1.1 intersectoral PiN",
     subtitle = paste0(
-      "Minimum to maximum percent across ",
+      "Minimum to maximum % across ",
       "n countries (specified to the right)"
     )
   ) +
