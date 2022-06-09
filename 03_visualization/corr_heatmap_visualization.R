@@ -93,6 +93,9 @@ df_corr <- read_csv(
 
 # First plot the correlations for the full data sample
 df_corr_all <- df_corr %>%
+  filter(
+    sector != "Displaced pop."
+  ) %>%
   pivot_wider(
     names_from = sector,
     values_from = pin,
