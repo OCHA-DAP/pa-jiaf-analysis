@@ -1160,7 +1160,7 @@ df_outliers_num %>%
     )
   ) +
   labs(
-    x = "# of units of analysis (log10 scale)",
+    x = "# of units of analysis",
     y = "% of outliers",
     title = "Outliers by number of units of analysis"
   )
