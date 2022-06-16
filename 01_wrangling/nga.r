@@ -52,6 +52,11 @@ df_ocha <- bind_rows(
 ) %>%
   mutate(source = "ocha", .before = 1)
 
+df_sev <- read_excel(
+  fp_ocha,
+  sheet = "Severity_LGA_PopGroup"
+) %>%
+  clean_names()
 
 ################
 #### PCODES ####
@@ -107,7 +112,30 @@ df_nga <- df_ocha %>%
   ) %>%
   ungroup()
 
+df_nga_sev <- df_sev %>%
+  left_join(df_pcodes, by = c("lga" = "adm2_en")) %>%
+  transmute(
+    adm0_name = "Nigeria",
+    adm0_pcode = "NGA",
+    adm1_name = adm1_en,
+    adm1_pcode,
+    adm2_name = lga,
+    adm2_pcode,
+    affected_population = pop,
+    sector = "intersectoral",
+    severity = overall_severity
+  ) %>%
+  left_join(df_nga,
+    by = c("adm2_pcode", "sector")
+  ) %>%
+  filter(severity > 0)
+
 write_csv(
   df_nga,
   file_paths$save_path
+)
+
+write_csv(
+  df_nga_sev,
+  file_paths$save_path_sev
 )

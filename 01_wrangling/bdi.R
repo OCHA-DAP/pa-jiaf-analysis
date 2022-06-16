@@ -1,4 +1,5 @@
 library(tidyverse)
+library(stringi)
 library(readxl)
 library(janitor)
 
@@ -26,7 +27,10 @@ df_ocha_raw <- read_excel(
   sheet = "PIN Overview-Expert Judgement"
 ) %>%
   clean_names() %>%
-  drop_na(x1)
+  drop_na(x1) %>%
+  mutate(
+    population = stri_trans_general(population, "ASCII")
+  )
 
 df_ocha_refugees <- read_excel(
   ocha_fp,
@@ -56,10 +60,10 @@ df_population <- read_excel(
 ) %>%
   clean_names() %>%
   mutate(
-    population_group = case_when(
-      group == "Autres Personnes vuln<U+00E9>rables" ~ "APV",
-      group == "Rapatries" ~ "Rapatri<U+00E9>s",
-      TRUE ~ group
+    group = stri_trans_general(group, id = "ASCII"),
+    population_group = ifelse(group == "Autres Personnes vulnerables",
+      "APV",
+      group
     )
   )
 
@@ -107,7 +111,7 @@ df_refugees_cleaned <- df_ocha_refugees %>%
     )],
     population_group = "refugees",
     affected_population = round(total_64), # all refugees are in need
-    sector = "refugees",
+    sector = "Refugees",
     pin = total_64,
     source = "ocha",
     sector_general = "sectoral"
@@ -148,13 +152,16 @@ df_bdi_indicator <- df_indicators %>%
     adm1_pcode,
     adm2_name,
     adm2_pcode,
-    population_group,
+    population_group = stri_trans_general(population_group, "ASCII"),
     indicator_number,
     critical = critical_status == "Oui",
     indicator_desc = indicator_text,
     pin = round(calculated_pi_n),
     severity = calculated_severity
   )
+
+df_bdi_indicator_sev <- df_bdi_indicator %>%
+  filter(severity > 0)
 
 write_csv(
   df_bdi,
@@ -164,4 +171,9 @@ write_csv(
 write_csv(
   df_bdi_indicator,
   file_paths$save_path_indicator
+)
+
+write_csv(
+  df_bdi_indicator_sev,
+  file_paths$save_path_indicator_sev
 )

@@ -136,7 +136,7 @@ df_syr <- left_join(
     affected_population = final_est_of_total_pop_aug_2021.x,
     sector,
     pin,
-    severity = ifelse(pin == 0, 1, score),
+    severity = score,
     source = "ocha",
     sector_general = ifelse(
       sector == "intersectoral",
@@ -148,4 +148,9 @@ df_syr <- left_join(
 write_csv(
   df_syr,
   file_paths$save_path
+)
+
+write_csv(
+  df_syr %>% filter(severity > 0),
+  file_paths$save_path_sev
 )

@@ -227,6 +227,17 @@ df_indicators <- read_excel(
   clean_names() %>%
   filter(row_number() > 2)
 
+df_sev <- read_excel(
+  ocha_fp,
+  sheet = "Step 5-Severity",
+  skip = 1
+) %>%
+  clean_names() %>%
+  filter(row_number() > 1) %>%
+  mutate(
+    population_group = ifelse(row_number() < 17, "residents", "IDPs")
+  )
+
 ########################
 #### DATA WRANGLING ####
 ########################
@@ -315,6 +326,61 @@ df_ukr <- df_organized %>%
     population_group != "total"
   )
 
+df_ukr_sev <- df_sev %>%
+  type.convert() %>%
+  pivot_longer(
+    severity_corrected_for_critical_max_rounded:wash_severity,
+    names_to = "sector",
+    values_to = "severity"
+  ) %>%
+  transmute(
+    adm0_pcode = "UKR",
+    adm0_name = "Ukraine",
+    adm1_name = case_when(
+      grepl("DON", zone_pop_group) ~ "Donetska",
+      grepl("LUH", zone_pop_group) ~ "Luhanska",
+      TRUE ~ "Other Blasts"
+    ),
+    adm1_pcode = case_when(
+      grepl("DON", zone_pop_group) ~ "UK14",
+      grepl("LUH", zone_pop_group) ~ "Uk44",
+      TRUE ~ "Other"
+    ),
+    adm2_pcode = gsub("GCA_|NGCA_|IDPS__|IDPS_", "", zone_pop_group),
+    adm2_name = adm2_pcode,
+    administration = case_when(
+      grepl("NGCA", zone_pop_group) ~ "non_governement_controlled",
+      grepl("GCA", zone_pop_group) ~ "governement_controlled",
+      TRUE ~ "Other"
+    ),
+    population_group,
+    sector = gsub("_severity", "", sector),
+    sector = case_when(
+      sector == "severity_corrected_for_critical_max_rounded" ~ "intersectoral",
+      sector == "pro" ~ "protection",
+      sector == "ed" ~ "education",
+      sector == "fsl" ~ "fslc",
+      TRUE ~ sector
+    ),
+    severity
+  ) %>%
+  left_join(df_ukr) %>%
+  group_by(
+    adm2_name,
+    administration,
+    population_group
+  ) %>%
+  mutate(
+    affected_population = max(affected_population, na.rm = TRUE),
+    source = "ocha",
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
+  ) %>%
+  ungroup()
+
 df_ukr_indicator <- df_indicators %>%
   mutate(
     administration = case_when(
@@ -355,6 +421,16 @@ write_csv(
 )
 
 write_csv(
+  df_ukr_sev,
+  file_paths$save_path_sev
+)
+
+write_csv(
   df_ukr_indicator,
   file_paths$save_path_indicator
+)
+
+write_csv(
+  df_ukr_indicator,
+  file_paths$save_path_indicator_sev
 )

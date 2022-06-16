@@ -82,7 +82,53 @@ df_yem <- df_ocha_raw %>%
     affected_population = max(affected_population)
   )
 
+df_yem_sev <- df_ocha_raw %>%
+  filter(pop_group == "Resident") %>%
+  mutate(
+    rmms = NA_real_,
+    intersectoral = humanitarian_condition_score,
+    protection = NA_real_,
+    wash = severity_68,
+    shelter = severity_71,
+    nutrition = severity_74,
+    education = severity_77,
+    fsac = severity_80,
+    cccm = severity_83,
+    health = severity_86
+  ) %>%
+  pivot_longer(
+    cols = rmms:health,
+    names_to = "sector",
+    values_to = "severity"
+  ) %>%
+  transmute(
+    adm0_name = "Yemen",
+    adm0_pcode = "YEM",
+    adm1_name = x2,
+    adm1_pcode = gsub("[0-9]{2}$", "", pcode),
+    adm2_name = district,
+    adm2_pcode = pcode,
+    affected_population = df_yem$affected_population[match(
+      adm2_pcode,
+      df_yem$adm2_pcode
+    )],
+    sector,
+    pin = df_yem$pin[match(adm2_pcode, df_yem$adm2_pcode)],
+    severity = round(severity),
+    source = "ocha",
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
+  )
+
 write_csv(
   df_yem,
   file_paths$save_path
+)
+
+write_csv(
+  df_yem_sev,
+  file_paths$save_path_sev
 )

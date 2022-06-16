@@ -58,6 +58,76 @@ df_indicators <- read_excel(
 ) %>%
   clean_names()
 
+df_intsect_sev <- read_excel(
+  indicator_fp,
+  sheet = "Step 6-PiN",
+  skip = 1
+) %>%
+  clean_names() %>%
+  group_by(
+    adm1_state,
+    adm1_pcode,
+    adm2_county,
+    adm2_pcode
+  ) %>%
+  summarize(
+    affected_population = sum(round(population)),
+    severity = mean(severity), # severity for all groups is the same
+    pin = sum(round(total_pi_n)),
+    .groups = "drop"
+  ) %>%
+  transmute(
+    adm0_name = "Cameroon",
+    adm0_pcode = "CMR",
+    adm1_name = adm1_state,
+    adm1_pcode,
+    adm2_name = adm2_county,
+    adm2_pcode,
+    sector = "intersectoral",
+    affected_population,
+    severity,
+    pin
+  )
+
+df_sector_sev <- read_excel(
+  indicator_fp,
+  sheet = "Step 5-Severity",
+  skip = 1
+) %>%
+  clean_names() %>%
+  pivot_longer(
+    cols = edu:wash,
+    values_to = "severity",
+    names_to = "sector"
+  ) %>%
+  mutate(
+    sector = case_when(
+      sector == "er" ~ "Early Recovery",
+      sector == "fsl" ~ "Food security",
+      sector == "nut" ~ "Nutrition",
+      sector == "pro" ~ "Protection",
+      sector == "refugees" ~ "Refugee Response",
+      sector == "wash" ~ "WASH",
+      sector == "edu" ~ "Education",
+      sector == "health" ~ "Health",
+      sector == "esnfi" ~ "Shelter and NFI"
+    )
+  ) %>%
+  left_join(
+    df_intsect_sev %>% select(-c(severity, pin, sector))
+  ) %>%
+  transmute(
+    adm0_name = "Cameroon",
+    adm0_pcode = "CMR",
+    adm1_name,
+    adm1_pcode,
+    adm2_name,
+    adm2_pcode,
+    sector,
+    affected_population,
+    severity
+  )
+
 ########################
 #### DATA WRANGLING ####
 ########################
@@ -82,7 +152,7 @@ df_organized <- df_ocha_raw %>%
     age,
     sex = sexe,
     population_group = gsub("n_", "", population_group),
-    pin = replace_na(value, 0),
+    pin = round(replace_na(value, 0)),
     source = "ocha",
     sector_general = ifelse(
       sector == "intersectoral",
@@ -115,6 +185,25 @@ df_cmr <- df_organized %>%
     )
   )
 
+temp <- df_cmr %>%
+  group_by(
+    adm0_name,
+    adm0_pcode,
+    adm1_name,
+    adm1_pcode,
+    adm2_name,
+    adm2_pcode,
+    sector
+  ) %>%
+  summarize(
+    pin = sum(pin),
+    .groups = "drop"
+  )
+
+df_cmr_sev <- df_sector_sev %>%
+  left_join(temp) %>%
+  rbind(df_intsect_sev)
+
 df_cmr_indicator <- df_indicators %>%
   separate(
     col = key,
@@ -143,6 +232,8 @@ df_cmr_indicator <- df_indicators %>%
     severity = calculated_severity
   )
 
+df_cmr_indicator_sev <- df_cmr_indicator %>%
+  filter(severity > 0)
 
 write_csv(
   df_cmr,
@@ -150,6 +241,16 @@ write_csv(
 )
 
 write_csv(
+  df_cmr_sev,
+  file_paths$save_path_sev
+)
+
+write_csv(
   df_cmr_indicator,
   file_paths$save_path_indicator
+)
+
+write_csv(
+  df_cmr_indicator_sev,
+  file_paths$save_path_indicator_sev
 )

@@ -25,8 +25,57 @@ df_ocha_raw <- read_excel(
   skip = 4,
   sheet = "Combined_Intersectoral_PIN"
 ) %>%
+  drop_na(ADM1_PROVINCE)
+
+# severity dataset
+df_sev <- read_excel(
+  file.path(
+    file_paths$ocha_dir,
+    "HNO_SECTOR_PIN_SUMMARY-20211122-final v5.xlsx"
+  ),
+  sheet = "combined_Cluster_Indicators_PIN",
+  skip = 4
+) %>%
   clean_names() %>%
-  drop_na(adm1_province)
+  drop_na(adm1_province) %>%
+  transmute(
+    adm0_name = "Mozambique",
+    adm0_pcode = "MOZ",
+    adm1_name = adm1_province,
+    adm1_pcode = adm1_pcode,
+    adm2_name = adm2_district,
+    adm2_pcode = adm2_pcode,
+    affected_population = total_pop,
+    fsl_pin = x11,
+    cccm_pin = x12,
+    edu_pin = x13,
+    health_pin = x14,
+    nutrition_pin = x15,
+    protection_pin = x19,
+    snfi_pin = x20,
+    wash_pin = x21,
+    intersectoral_pin = overall_max,
+    fsl_sev = fsl,
+    cccm_sev = ccm,
+    edu_sev = edu,
+    health_sev = health,
+    nutrition_sev = nut,
+    protection_sev = pro,
+    snfi_sev = shelter,
+    wash_sev = wash,
+    intersectoral_sev = overall_severity
+  ) %>%
+  pivot_longer(
+    cols = ends_with("pin") | ends_with("sev"),
+    names_to = c("sector", ".value"),
+    names_pattern = "(.*)_(pin$|sev$)"
+  ) %>%
+  mutate(
+    pin = round(pin),
+    severity = round(as.numeric(sev))
+  ) %>%
+  select(-sev) %>%
+  drop_na(severity)
 
 ########################
 #### DATA WRANGLING ####
@@ -34,6 +83,7 @@ df_ocha_raw <- read_excel(
 
 
 df_moz <- df_ocha_raw %>%
+  clean_names() %>%
   transmute(
     adm0_name = "Mozambique",
     adm0_pcode = "MOZ",
@@ -119,6 +169,11 @@ df_moz_indicator <- df_ocha_raw %>%
 write_csv(
   df_moz,
   file_paths$save_path
+)
+
+write_csv(
+  df_sev,
+  file_paths$save_path_sev
 )
 
 write_csv(

@@ -108,7 +108,7 @@ df_organized <- df_ocha %>%
     # 4 cases of pin higher than population figures
     pin = ifelse(pin > affected_population, affected_population, pin),
     severity = case_when(
-      pin == 0 | severity == 0 | is.na(severity),
+      pin > 0 & severity == 0,
       1,
       severity
     ),
@@ -140,4 +140,9 @@ df_irq <- df_organized %>%
 write_csv(
   df_irq,
   file_paths$save_path
+)
+
+write_csv(
+  df_irq,
+  file_paths$save_path_sev
 )

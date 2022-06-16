@@ -60,6 +60,22 @@ get_paths <- function(country, country_name = NULL) {
     fn
   )
 
+  # file path to save sectoral sev data
+  save_path_sev <- file.path(
+    data_dir,
+    aggregated_data_dir,
+    "sectoral_sev",
+    fn
+  )
+
+  # file path to save indicator severity data
+  save_path_indicator_sev <- file.path(
+    data_dir,
+    aggregated_data_dir,
+    "indicator_sev",
+    fn
+  )
+
   # file path to save hh data
   save_path_hh_data <- file.path(
     data_dir,
@@ -72,8 +88,10 @@ get_paths <- function(country, country_name = NULL) {
     ocha_dir = ocha_dir,
     cluster_dir = cluster_dir,
     save_path = save_path,
+    save_path_sev = save_path_sev,
     save_path_hh_data = save_path_hh_data,
-    save_path_indicator = save_path_indicator
+    save_path_indicator = save_path_indicator,
+    save_path_indicator_sev = save_path_indicator_sev
   )
 }
 

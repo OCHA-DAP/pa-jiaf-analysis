@@ -97,7 +97,38 @@ df_bfa <- df_organized %>%
       paste0(df_summarized$adm3_name, df_summarized$population_group)
   )
 
+df_bfa_sev <- df_bfa %>%
+  group_by(
+    adm0_name,
+    adm0_pcode,
+    adm1_name,
+    adm1_pcode,
+    adm2_name,
+    adm2_pcode,
+    adm3_name,
+    adm3_pcode,
+    sector,
+    source,
+    sector_general
+  ) %>%
+  summarize(
+    severity = mean(as.numeric(severity)),
+    pin = sum(pin),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    severity = ifelse(sector_general == "intersectoral", severity, NA_real_)
+  )
+
+df_bfa <- df_bfa %>%
+  select(-severity)
+
 write_csv(
   df_bfa,
   file_paths$save_path
+)
+
+write_csv(
+  df_bfa,
+  file_paths$save_path_sev
 )
