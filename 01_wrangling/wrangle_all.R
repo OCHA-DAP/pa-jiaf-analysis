@@ -32,13 +32,8 @@ sectoral_df <- map_dfr(
   ),
   read_csv
 ) %>%
-  mutate(
-    sector_group = ifelse(
-      source == "cluster",
-      "sectoral_cluster",
-      sector_general
-    ),
-    .before = pin
+  select(
+    -source
   )
 
 sectoral_df %>%
@@ -84,5 +79,46 @@ df_hh_data %>%
     file.path(
       file_paths$agg_dir,
       "2022_hh_data.csv"
+    )
+  )
+
+# Severity data
+
+df_sev_data <- map_dfr(
+  list.files(
+    file_paths$input_sev_sector_dir,
+    pattern = ".csv",
+    full.names = TRUE
+  ),
+  read_csv
+) %>%
+  select(
+    -source
+  )
+
+df_sev_data %>%
+  write_csv(
+    file.path(
+      file_paths$agg_dir,
+      "2022_sev_data.csv"
+    )
+  )
+
+# Indicator severity data
+
+df_ind_sev_data <- map_dfr(
+  list.files(
+    file_paths$input_sev_indicator_dir,
+    pattern = ".csv",
+    full.names = TRUE
+  ),
+  read_csv
+)
+
+df_ind_sev_data %>%
+  write_csv(
+    file.path(
+      file_paths$agg_dir,
+      "2022_ind_sev_data.csv"
     )
   )

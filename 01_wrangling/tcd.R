@@ -62,6 +62,7 @@ df_ind_sev <- read_excel(
     adm0_name,
     adm0_pcode,
     adm1_name,
+    adm1_pcode,
     adm2_name,
     adm2_pcode = admin_2_p_code,
     indicator_number,

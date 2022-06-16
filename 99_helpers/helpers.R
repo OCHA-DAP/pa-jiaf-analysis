@@ -113,6 +113,8 @@ get_paths_analysis <- function() {
     input_dir = file.path(agg_dir, "sectoral_pins"),
     input_hh_dir = file.path(agg_dir, "hh_data"),
     input_indicator_dir = file.path(agg_dir, "indicator_pins"),
+    input_sev_sector_dir = file.path(agg_dir, "sectoral_sev"),
+    input_sev_indicator_dir = file.path(agg_dir, "indicator_sev"),
     output_dir = output_dir
   )
 }

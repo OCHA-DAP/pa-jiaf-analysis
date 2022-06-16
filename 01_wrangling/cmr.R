@@ -86,7 +86,8 @@ df_intsect_sev <- read_excel(
     sector = "intersectoral",
     affected_population,
     severity,
-    pin
+    pin,
+    sector_general = "intersectoral"
   )
 
 df_sector_sev <- read_excel(
@@ -125,7 +126,8 @@ df_sector_sev <- read_excel(
     adm2_pcode,
     sector,
     affected_population,
-    severity
+    severity,
+    sector_general = "sectoral"
   )
 
 ########################
@@ -197,12 +199,13 @@ temp <- df_cmr %>%
   ) %>%
   summarize(
     pin = sum(pin),
+    sector_general = "sectoral",
     .groups = "drop"
   )
 
 df_cmr_sev <- df_sector_sev %>%
   left_join(temp) %>%
-  rbind(df_intsect_sev)
+  bind_rows(df_intsect_sev)
 
 df_cmr_indicator <- df_indicators %>%
   separate(

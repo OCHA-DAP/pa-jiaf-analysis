@@ -125,7 +125,7 @@ df_nga_sev <- df_sev %>%
     sector = "intersectoral",
     severity = overall_severity
   ) %>%
-  left_join(df_nga,
+  left_join(df_nga %>% select(adm2_pcode, sector, pin, sector_general),
     by = c("adm2_pcode", "sector")
   ) %>%
   filter(severity > 0)

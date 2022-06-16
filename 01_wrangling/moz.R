@@ -72,7 +72,12 @@ df_sev <- read_excel(
   ) %>%
   mutate(
     pin = round(pin),
-    severity = round(as.numeric(sev))
+    severity = round(as.numeric(sev)),
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
   ) %>%
   select(-sev) %>%
   drop_na(severity)

@@ -231,7 +231,14 @@ temp <- df_ssd %>%
 
 df_ssd_sev <- temp %>%
   left_join(df_sev) %>%
-  filter(severity > 0)
+  filter(severity > 0) %>%
+  mutate(
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    )
+  )
 
 df_ssd_indicator <- df_indicators %>%
   left_join(

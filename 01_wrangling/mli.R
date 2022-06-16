@@ -228,7 +228,8 @@ df_mli_sev <- rbind(
       )
     ],
     severity = sev,
-    pin = round(pin)
+    pin = round(pin),
+    sector_general = "sectoral"
   ) %>%
   filter(!is.na(severity))
 
