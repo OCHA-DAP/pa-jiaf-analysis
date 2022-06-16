@@ -929,7 +929,7 @@ df_outlier_pop <- df_outliers %>%
     log_pop_bins
   ) %>%
   summarize(
-    is_any_outlier = is_any_outlier / n(),
+    is_any_outlier = sum(is_any_outlier) / n(),
     .groups = "drop"
   )
 
@@ -1162,7 +1162,7 @@ df_outliers_num %>%
   labs(
     x = "# of units of analysis",
     y = "% of outliers",
-    title = "Outliers by number of units of analysis"
+    title = "Outliers by # of units of analysis"
   )
 
 ggsave(
@@ -1235,7 +1235,7 @@ df_outliers_num %>%
   labs(
     x = "# of sectors included in calculation",
     y = "% of outliers",
-    title = "Outliers by number of sectors"
+    title = "Outliers by # of sectors"
   )
 
 
@@ -1259,4 +1259,69 @@ write_csv(
     "datasets",
     "2022_outliers_number_sectors.csv"
   )
+)
+
+df_outliers_num %>%
+  ggplot(
+    aes(
+      x = units,
+      y = num_sectors,
+      color = pct_outliers
+    )
+  ) +
+  geom_point(
+    size = 3
+  ) +
+  scale_x_log10() +
+  scale_color_gradient(
+    labels = scales::percent_format(1),
+    low = "#D2F2F0",
+    high = "#18998F"
+  ) +
+  theme_minimal() +
+  labs(
+    x = "# of sectors",
+    y = "# of units of analysis",
+    color = "% of outliers",
+    title = "Outliers by # sectors and # of units of analysis"
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  )
+
+
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "2022_outliers_num_sectors_and_units.png"
+  ),
+  height = 4,
+  width = 8
 )
