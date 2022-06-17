@@ -116,7 +116,7 @@ cluster_df <-
   mutate(
     sector = case_when(
       sector %in% c("cc", "cccm", "gsat") ~ "CCCM",
-      # gestion des Sites d’Accueil Temporaire
+      # gestion des Sites d<U+2019>Accueil Temporaire
       sector %in% c(
         "early recovery",
         "early recovery & livelihoods",
@@ -149,7 +149,7 @@ cluster_df <-
         "seg_alimentaria",
         "secal"
       ) ~ "FS/FSL",
-      # securité alimentaire
+      # securit<U+00E9> alimentaire
       sector %in% c(
         "sante",
         "he",
@@ -173,8 +173,8 @@ cluster_df <-
         "prot",
         "pro",
         "protection_general",
-        "protection_aor",
-        "prt"
+        "prt",
+        "gp"
       ) ~ "Protection",
       sector %in% c(
         "protection_cp",
@@ -187,12 +187,11 @@ cluster_df <-
         "protection_gbv",
         "pro-gen pro",
         "gbv",
-        "gb",
-        "gp"
+        "gb"
       ) ~ "Protection (GBV)",
       sector %in% c("hlp", "ltb", "protection_hlp") ~ "Protection (HLP)",
-      # Droit au Logement, à la Terre et aux Biens
-      sector %in% c("ma", "minas", "lam") ~ "Protection (MA)",
+      # Droit au Logement, <U+00E0> la Terre et aux Biens
+      sector %in% c("ma", "minas", "protection_aor", "lam") ~ "Protection (MA)",
       # lutte anti-mine
       sector %in% c(
         "abris",

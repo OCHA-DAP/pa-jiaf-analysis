@@ -58,6 +58,20 @@ df_population <- read_excel(
 ) %>%
   clean_names() %>%
   filter(mantika_pcode != "Total") %>%
+  mutate(
+    male_below_18 =
+      ifelse(adm3_baladiya_en == "Tawergha", 8500 * 0.197, male_below_18),
+    male_18_59 =
+      ifelse(adm3_baladiya_en == "Tawergha", 8500 * 0.278, male_18_59),
+    male_60 =
+      ifelse(adm3_baladiya_en == "Tawergha", 8500 * 0.028, male_60),
+    female_below_18 =
+      ifelse(adm3_baladiya_en == "Tawergha", 8500 * 0.213, female_below_18),
+    female_18_59 =
+      ifelse(adm3_baladiya_en == "Tawergha", 8500 * 0.256, female_18_59),
+    female_60 =
+      ifelse(adm3_baladiya_en == "Tawergha", 8500 * 0.028, female_60)
+  ) %>%
   pivot_longer(
     cols = male_below_18:female_60,
     names_to = "sex_age",

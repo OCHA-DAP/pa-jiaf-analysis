@@ -100,7 +100,8 @@ df_outliers <- df %>%
   filter(!is.na(stdv)) %>%
   mutate(
     is_upper_outlier = ifelse(pin > (2 * stdv) + mean, 1, 0),
-    is_lower_outlier = ifelse(pin < mean - (2 * stdv), 1, 0)
+    is_lower_outlier = ifelse(pin < mean - (2 * stdv), 1, 0),
+    is_any_outlier = pmin(is_upper_outlier + is_lower_outlier, 1)
   )
 
 write_csv(
@@ -896,4 +897,431 @@ write_csv(
     "datasets",
     "2022_distribution_min_2nd_max_pins.csv"
   )
+)
+
+###############################################
+#### RELATIONSHIP WITH DISAGG AND OUTLIERS ####
+###############################################
+
+# get labels for cutting bins
+log_labs <- sapply(
+  0:15,
+  function(x) {
+    paste(
+      scales::comma(exp(x)),
+      scales::comma(exp(x + 1)),
+      sep = " - "
+    )
+  }
+)
+
+df_outlier_pop <- df_outliers %>%
+  mutate(
+    log_pop = log(affected_population),
+    log_pop_bins = cut(
+      log_pop,
+      breaks = 0:16,
+      labels = log_labs,
+      include.lowest = TRUE
+    )
+  ) %>%
+  group_by(
+    log_pop_bins
+  ) %>%
+  summarize(
+    is_any_outlier = sum(is_any_outlier) / n(),
+    .groups = "drop"
+  )
+
+df_outlier_pop %>%
+  ggplot() +
+  geom_bar(
+    aes(
+      x = fct_rev(log_pop_bins),
+      y = is_any_outlier
+    ),
+    stat = "identity",
+    fill = "#1EBFB3"
+  ) +
+  coord_flip() +
+  scale_y_continuous(
+    labels = scales::percent_format(
+      accuracy = 1
+    )
+  ) +
+  labs(
+    x = "Population size, disaggregated area",
+    y = "% of outliers",
+    title = "Outliers by size of unit of analysis"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    ),
+    plot.margin = margin(10, 10, 10, 10)
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "2022_percentage_of_outlier_frequency_by_pop.png"
+  ),
+  height = 6,
+  width = 8
+)
+
+write_csv(
+  df_outlier_pop,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_percentage_of_outlier_frequency_by_pop.csv"
+  )
+)
+
+## Simply plotting distribution of areas to show why using log
+
+df_pop_hist <- df_outliers %>%
+  mutate(
+    log_pop = log(affected_population),
+    log_pop_bins = cut(
+      log_pop,
+      breaks = 0:16,
+      labels = log_labs,
+      include.lowest = TRUE
+    )
+  ) %>%
+  group_by(
+    log_pop_bins
+  ) %>%
+  summarize(
+    n = n(),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    perc_areas = n / sum(n)
+  )
+
+df_pop_hist %>%
+  ggplot() +
+  geom_bar(
+    aes(
+      x = fct_rev(log_pop_bins),
+      y = perc_areas
+    ),
+    stat = "identity",
+    fill = "#1EBFB3"
+  ) +
+  coord_flip() +
+  scale_y_continuous(
+    labels = scales::percent_format(
+      accuracy = 1
+    )
+  ) +
+  labs(
+    x = "Population size, disaggregated area",
+    y = "% of areas",
+    title = "% of units of analysis by population size"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "2022_population_histogram.png"
+  ),
+  height = 6,
+  width = 8
+)
+
+write_csv(
+  df_pop_hist,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_population_histogram.csv"
+  )
+)
+
+## Look at number of units of analysis and outliers
+
+df_outliers_num <- df_outliers %>%
+  group_by(
+    adm0_pcode
+  ) %>%
+  summarize(
+    units = n(),
+    num_sectors = length(unique(sector)),
+    pct_outliers = sum(is_any_outlier) / units,
+    .groups = "drop"
+  )
+
+df_outliers_num %>%
+  ggplot() +
+  geom_point(
+    aes(
+      x = units,
+      y = pct_outliers
+    ),
+    size = 3,
+    color = "#1EBFB3"
+  ) +
+  scale_x_log10() +
+  scale_y_continuous(
+    labels = scales::percent_format(1)
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  ) +
+  labs(
+    x = "# of units of analysis",
+    y = "% of outliers",
+    title = "Outliers by # of units of analysis"
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "2022_outliers_number_units_analysis.png"
+  ),
+  height = 4,
+  width = 7
+)
+
+write_csv(
+  df_outliers_num,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_outliers_number_units_analysis.csv"
+  )
+)
+
+# also plotting against # of sectors
+
+df_outliers_num %>%
+  ggplot(
+    aes(
+      x = num_sectors,
+      y = pct_outliers
+    )
+  ) +
+  geom_point(
+    size = 3,
+    color = "#1EBFB3"
+  ) +
+  scale_y_continuous(
+    labels = scales::percent_format(1)
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  ) +
+  labs(
+    x = "# of sectors included in calculation",
+    y = "% of outliers",
+    title = "Outliers by # of sectors"
+  )
+
+
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "2022_outliers_number_sectors.png"
+  ),
+  height = 4,
+  width = 7
+)
+
+write_csv(
+  df_outliers_num,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_outliers_number_sectors.csv"
+  )
+)
+
+df_outliers_num %>%
+  ggplot(
+    aes(
+      x = units,
+      y = num_sectors,
+      color = pct_outliers
+    )
+  ) +
+  geom_point(
+    size = 3
+  ) +
+  scale_x_log10() +
+  scale_color_gradient(
+    labels = scales::percent_format(1),
+    low = "#D2F2F0",
+    high = "#18998F"
+  ) +
+  theme_minimal() +
+  labs(
+    x = "# of sectors",
+    y = "# of units of analysis",
+    color = "% of outliers",
+    title = "Outliers by # sectors and # of units of analysis"
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  )
+
+
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "2022_outliers_num_sectors_and_units.png"
+  ),
+  height = 4,
+  width = 8
 )
