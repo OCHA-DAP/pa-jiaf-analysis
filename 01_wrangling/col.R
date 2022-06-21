@@ -116,7 +116,7 @@ df_col <- right_join(
       "sectoral"
     )
   ) %>%
-  filter(sector != "san")
+  filter(!sector %in% c("san", "seguridad_alimentaria"))
 
 indicator_desc <- data.frame(t(df_indicators[c(3, 7), ]), row.names = NULL) %>%
   filter(X1 %in% c(1:14))
