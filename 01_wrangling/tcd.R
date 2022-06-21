@@ -129,7 +129,9 @@ df_cleaned <- df_ocha_raw %>%
 
 df_tcd_sev <- df_sev %>%
   left_join(
-    df_cleaned %>% select(-sector)
+    df_cleaned %>%
+      filter(sector == "intersectoral") %>%
+      select(-sector)
   ) %>%
   mutate(
     severity = round(severity)
