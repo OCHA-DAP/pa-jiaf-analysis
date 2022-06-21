@@ -329,7 +329,7 @@ df_ukr <- df_organized %>%
 df_ukr_sev <- df_sev %>%
   type.convert() %>%
   pivot_longer(
-    severity_corrected_for_critical_max_rounded:wash_severity,
+    mean_of_max_50_percent_severity:wash_severity,
     names_to = "sector",
     values_to = "severity"
   ) %>%
@@ -355,12 +355,18 @@ df_ukr_sev <- df_sev %>%
     ),
     population_group,
     sector = gsub("_severity", "", sector),
-    sector = case_when(
+    sector_temp = case_when(
+      sector == "mean_of_max_50_percent" ~ "intersectoral_unadjusted",
       sector == "severity_corrected_for_critical_max_rounded" ~ "intersectoral",
       sector == "pro" ~ "protection",
       sector == "ed" ~ "education",
       sector == "fsl" ~ "fslc",
       TRUE ~ sector
+    ),
+    sector = ifelse(
+      sector_temp == "intersectoral_unadjusted",
+      "intersectoral",
+      sector_temp
     ),
     severity
   ) %>%
@@ -379,7 +385,12 @@ df_ukr_sev <- df_sev %>%
       "sectoral"
     )
   ) %>%
-  ungroup()
+  ungroup() %>%
+  mutate(
+    sector = sector_temp,
+    severity = round(severity)
+  ) %>%
+  select(-sector_temp)
 
 df_ukr_indicator <- df_indicators %>%
   mutate(

@@ -17,7 +17,9 @@ file_paths <- get_paths("Mali")
 
 ocha_fp <- file.path(
   file_paths$ocha_dir,
-  "MALI - HNO 2022 - Données par indicateur_compilation - VF.xlsx"
+  stringi::stri_unescape_unicode(
+    "MALI - HNO 2022 - Donn\\u00e9es par indicateur_compilation - VF.xlsx"
+  )
 )
 
 df_ocha_raw <- read_excel(

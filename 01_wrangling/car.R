@@ -35,13 +35,6 @@ df_ocha_raw <- read_excel(ocha_fp,
     pin = pin_expert
   )
 
-# reading a sheet to extract pcodes
-df_ocha_pcodes <- read_excel(ocha_fp,
-  sheet = "Pop_SPref2022HorsRef"
-) %>%
-  filter(row_number() < 80) %>%
-  clean_names()
-
 # CCCM/NFI/Shelter data
 df_cccm <- read_excel(
   file.path(

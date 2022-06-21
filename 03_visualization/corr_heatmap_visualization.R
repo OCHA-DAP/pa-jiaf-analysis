@@ -20,7 +20,7 @@ df_pins <- read_csv(
 )
 
 ggplot(
-  df_pins %>% filter(sector_group == "sectoral"),
+  df_pins %>% filter(sector_general == "sectoral"),
   aes(
     x = fct_reorder(adm0_pcode, pin),
     y = pin
@@ -68,7 +68,7 @@ ggsave(
 )
 
 write_csv(
-  df_pins %>% filter(sector_group == "sectoral"),
+  df_pins %>% filter(sector_general == "sectoral"),
   file.path(
     file_paths$output_dir,
     "graphs",
@@ -361,7 +361,7 @@ df_sectoral <- df_corr %>%
   left_join(
     filter(
       df_pins,
-      sector_group == "intersectoral"
+      sector_general == "intersectoral"
     ) %>%
       select(
         adm0_pcode,

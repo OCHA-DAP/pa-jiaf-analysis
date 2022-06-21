@@ -67,6 +67,35 @@ df_population <- read_excel(
     )
   )
 
+df_severity <- read_excel(
+  ocha_fp,
+  sheet = "Step 6-PiN"
+) %>%
+  clean_names() %>%
+  left_join(df_ocha_pcode_extract) %>%
+  separate(key, c("adm2", "population_group"), sep = "_") %>%
+  transmute(
+    adm0_name = "Burundi",
+    adm0_pcode = "BDI",
+    adm1_name = adm1_state,
+    adm1_pcode,
+    adm2_name = adm2_county,
+    adm2_pcode,
+    population_group = stri_trans_general(population_group, id = "ASCII"),
+    affected_population = population,
+    pin = round(max_sector),
+    intersectoral_unadjusted = mean_of_max_50_percent_here_of_23_severity,
+    intersectoral = severity_corrected_for_critical_max_rounded
+  ) %>%
+  pivot_longer(
+    cols = starts_with("intersectoral"),
+    names_to = "sector",
+    values_to = "severity"
+  ) %>%
+  mutate(
+    sector_general = "intersectoral"
+  )
+
 ########################
 #### DATA WRANGLING ####
 ########################
@@ -166,6 +195,11 @@ df_bdi_indicator_sev <- df_bdi_indicator %>%
 write_csv(
   df_bdi,
   file_paths$save_path
+)
+
+write_csv(
+  df_severity,
+  file_paths$save_path_sev
 )
 
 write_csv(

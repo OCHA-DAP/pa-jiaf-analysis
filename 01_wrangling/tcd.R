@@ -47,8 +47,14 @@ df_sev <- read_excel(
     adm1_pcode,
     adm2_name = adm2_county,
     adm2_pcode,
-    sector = "intersectoral",
-    severity = severity_corrected_for_critical_max_rounded
+    intersectoral = severity_corrected_for_critical_max_rounded,
+    intersectoral_unadjusted = mean_of_max_50_percent_here_of_23_severity
+  ) %>%
+  type_convert() %>%
+  pivot_longer(
+    c(intersectoral, intersectoral_unadjusted),
+    names_to = "sector",
+    values_to = "severity"
   )
 
 df_ind_sev <- read_excel(
@@ -122,7 +128,12 @@ df_cleaned <- df_ocha_raw %>%
   ungroup()
 
 df_tcd_sev <- df_sev %>%
-  left_join(df_cleaned)
+  left_join(
+    df_cleaned %>% select(-sector)
+  ) %>%
+  mutate(
+    severity = round(severity)
+  )
 
 write_csv(
   df_cleaned,

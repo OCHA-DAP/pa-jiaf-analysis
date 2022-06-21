@@ -40,6 +40,7 @@ df_ocha <- df_ocha_raw %>%
     x1:x7,
     x9,
     x26799,
+    x253,
     all_of(col_indexes)
   )
 
@@ -75,7 +76,14 @@ df_organized <- df_ocha %>%
       TRUE ~ population_group
     ),
     sector = ifelse(sector == "", "intersectoral", gsub("_", "", sector)),
-    severity,
+    unadjusted_severity = ifelse(sector == "intersectoral",
+      severity,
+      NA_real_
+    ),
+    severity = ifelse(sector == "intersectoral",
+      max_sector,
+      NA_real_
+    ),
     pin = ifelse(is.na(value) | value == "-", 0, round(as.numeric(value, 0))),
     source = "ocha",
     sector_general = ifelse(
@@ -97,7 +105,7 @@ df_bfa <- df_organized %>%
       paste0(df_summarized$adm3_name, df_summarized$population_group)
   )
 
-df_bfa_sev <- df_bfa %>%
+temp <- df_bfa %>%
   group_by(
     adm0_name,
     adm0_pcode,
@@ -112,7 +120,10 @@ df_bfa_sev <- df_bfa %>%
     sector_general
   ) %>%
   summarize(
-    severity = mean(as.numeric(severity)),
+    # even though we have multiple population groups, but the severity
+    # that was used is only for one of the groups
+    severity = max(as.numeric(severity), na.rm = TRUE),
+    unadjusted_severity = max(as.numeric(unadjusted_severity), na.rm = TRUE),
     pin = sum(pin),
     .groups = "drop"
   ) %>%
@@ -120,8 +131,26 @@ df_bfa_sev <- df_bfa %>%
     severity = ifelse(sector_general == "intersectoral", severity, NA_real_)
   )
 
+df_bfa_sev <- temp %>%
+  select(
+    -unadjusted_severity
+  ) %>%
+  bind_rows(
+    temp %>%
+      mutate(
+        severity = unadjusted_severity,
+        sector = "intersectoral_unadjusted"
+      ) %>%
+      filter(
+        sector_general == "intersectoral"
+      ) %>%
+      select(
+        -unadjusted_severity
+      )
+  )
+
 df_bfa <- df_bfa %>%
-  select(-severity)
+  select(-severity, unadjusted_severity)
 
 write_csv(
   df_bfa,
@@ -129,6 +158,6 @@ write_csv(
 )
 
 write_csv(
-  df_bfa,
+  df_bfa_sev,
   file_paths$save_path_sev
 )

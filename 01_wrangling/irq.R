@@ -107,11 +107,7 @@ df_organized <- df_ocha %>%
     pin = round(pin),
     # 4 cases of pin higher than population figures
     pin = ifelse(pin > affected_population, affected_population, pin),
-    severity = case_when(
-      pin > 0 & severity == 0,
-      1,
-      severity
-    ),
+    severity,
     source = "ocha",
     sector_general = ifelse(
       sector == "itc",

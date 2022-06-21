@@ -41,19 +41,29 @@ df_sev <- read_excel(
 ) %>%
   clean_names() %>%
   pivot_longer(
-    severity_corrected_for_critical_max_rounded:wash_severity,
+    c(
+      mean_of_max_50_percent_severity,
+      severity_corrected_for_critical_max_rounded:wash_severity
+    ),
     names_to = "sector",
     values_to = "severity"
   ) %>%
   mutate(
-    sector = ifelse(sector == "severity_corrected_for_critical_max_rounded",
+    sector_temp = case_when(
+      sector == "severity_corrected_for_critical_max_rounded" ~ "intersectoral",
+      sector == "mean_of_max_50_percent_severity" ~ "intersectoral_unadjusted",
+      TRUE ~ gsub("_severity", "", sector)
+    ),
+    sector = ifelse(
+      sector_temp == "intersectoral_unadjusted",
       "intersectoral",
-      gsub("_severity", "", sector)
+      sector_temp
     )
   ) %>%
   select(
     adm2_pcode,
     sector,
+    sector_temp,
     severity
   )
 
@@ -237,8 +247,10 @@ df_ssd_sev <- temp %>%
       sector == "intersectoral",
       "intersectoral",
       "sectoral"
-    )
-  )
+    ),
+    sector = sector_temp
+  ) %>%
+  select(-sector_temp)
 
 df_ssd_indicator <- df_indicators %>%
   left_join(

@@ -58,51 +58,21 @@ df_indicators <- read_excel(
 ) %>%
   clean_names()
 
-df_intsect_sev <- read_excel(
-  indicator_fp,
-  sheet = "Step 6-PiN",
-  skip = 1
-) %>%
-  clean_names() %>%
-  group_by(
-    adm1_state,
-    adm1_pcode,
-    adm2_county,
-    adm2_pcode
-  ) %>%
-  summarize(
-    affected_population = sum(round(population)),
-    severity = mean(severity), # severity for all groups is the same
-    pin = sum(round(total_pi_n)),
-    .groups = "drop"
-  ) %>%
-  transmute(
-    adm0_name = "Cameroon",
-    adm0_pcode = "CMR",
-    adm1_name = adm1_state,
-    adm1_pcode,
-    adm2_name = adm2_county,
-    adm2_pcode,
-    sector = "intersectoral",
-    affected_population,
-    severity,
-    pin,
-    sector_general = "intersectoral"
-  )
-
-df_sector_sev <- read_excel(
+df_sev <- read_excel(
   indicator_fp,
   sheet = "Step 5-Severity",
   skip = 1
 ) %>%
   clean_names() %>%
+  # final severity is the same as JIAF1.1 severity
   pivot_longer(
-    cols = edu:wash,
+    cols = severity_corrected_for_critical_max_rounded:wash,
     values_to = "severity",
     names_to = "sector"
   ) %>%
   mutate(
     sector = case_when(
+      sector == "severity_corrected_for_critical_max_rounded" ~ "intersectoral",
       sector == "er" ~ "Early Recovery",
       sector == "fsl" ~ "Food security",
       sector == "nut" ~ "Nutrition",
@@ -114,20 +84,15 @@ df_sector_sev <- read_excel(
       sector == "esnfi" ~ "Shelter and NFI"
     )
   ) %>%
-  left_join(
-    df_intsect_sev %>% select(-c(severity, pin, sector))
-  ) %>%
   transmute(
     adm0_name = "Cameroon",
     adm0_pcode = "CMR",
-    adm1_name,
+    adm1_name = adm1_state,
     adm1_pcode,
-    adm2_name,
+    adm2_name = adm2_county,
     adm2_pcode,
     sector,
-    affected_population,
-    severity,
-    sector_general = "sectoral"
+    severity
   )
 
 ########################
@@ -199,13 +164,11 @@ temp <- df_cmr %>%
   ) %>%
   summarize(
     pin = sum(pin),
-    sector_general = "sectoral",
     .groups = "drop"
   )
 
-df_cmr_sev <- df_sector_sev %>%
-  left_join(temp) %>%
-  bind_rows(df_intsect_sev)
+df_cmr_sev <- df_sev %>%
+  left_join(temp)
 
 df_cmr_indicator <- df_indicators %>%
   separate(

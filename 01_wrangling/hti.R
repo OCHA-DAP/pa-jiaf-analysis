@@ -36,6 +36,7 @@ df_ocha <- read_excel(
     affected_population = population,
     sector = "intersectoral",
     severity = round(vc),
+    severity_unadjusted = round(vs),
     pin = as.numeric(pi_n),
     source = "ocha",
     sector_general = "intersectoral"
@@ -293,6 +294,20 @@ df_hti <- bind_rows(
     )],
     affected_population
   ))
+
+df_hti_sev <- df_hti %>%
+  bind_rows(
+    df_hti %>%
+      filter(sector == "intersectoral") %>%
+      mutate(
+        severity = severity_unadjusted,
+        sector = "intersectoral_unadjusted"
+      )
+  ) %>%
+  select(-severity_unadjusted)
+
+df_hti <- df_hti %>%
+  select(-severity_unadjusted)
 
 df_hti_cleaning <- df_indicator %>%
   select(-matches("^x[1-5]"), -c(
