@@ -44,10 +44,9 @@ df_ocha_sev <- read_excel(
   filter(!is.na(x1)) %>%
   transmute(
     adm1_pcode = x1,
-    adm1_name = x2,
     nut = x3,
     edu = x7,
-    segal = x11,
+    fsl = x11,
     wash = x16,
     snfi = x20,
     pro = x24,
@@ -90,7 +89,10 @@ df_ven <- df_ocha_raw %>%
   transmute(
     adm0_name = "Venezuela",
     adm0_pcode = "VEN",
-    adm1_name,
+    adm1_name = df_population$estado[match(
+      adm1_pcode,
+      df_population$pcode
+    )],
     adm1_pcode,
     affected_population = df_population$poblacion_total_2021[match(
       adm1_pcode,

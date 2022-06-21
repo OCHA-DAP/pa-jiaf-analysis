@@ -43,6 +43,7 @@ get_paths <- function(country, country_name = NULL) {
   )
 
   fn <- glue::glue("{iso3}_pins_2022.csv")
+  fn_sev <- glue::glue("{iso3}_sev_2022.csv")
 
   # file path to save sectoral pin data
   save_path <- file.path(
@@ -65,7 +66,7 @@ get_paths <- function(country, country_name = NULL) {
     data_dir,
     aggregated_data_dir,
     "sectoral_sev",
-    fn
+    fn_sev
   )
 
   # file path to save indicator severity data
@@ -73,7 +74,7 @@ get_paths <- function(country, country_name = NULL) {
     data_dir,
     aggregated_data_dir,
     "indicator_sev",
-    fn
+    fn_sev
   )
 
   # file path to save hh data
