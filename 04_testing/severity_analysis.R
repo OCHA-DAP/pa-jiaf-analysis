@@ -58,7 +58,7 @@ temp %>%
     fill = "#1EBFB3",
     na.rm = TRUE
   ) +
-  facet_wrap(~adm0_pcode, scales = "free_y") +
+  facet_wrap(~adm0_pcode, scales = "fixed") +
   labs(
     y = "Density of number of sectors",
     title = "Distribution of number of sectors that are 3 or above by geographic area", # nolint
@@ -212,3 +212,67 @@ write_csv(
     "2022_hno_sector_severity_percent.csv"
   )
 )
+
+# First plot the correlations for the full data sample
+df_corr_all <- df %>%
+  filter(
+    !is.na(severity),
+    sector_general != "intersectoral",
+    severity > 0,
+    sector != "Displaced pop."
+  ) %>%
+  mutate(
+    severity = ifelse(severity > 3, "Yes", "No")
+  ) %>%
+  pivot_wider(
+    names_from = sector,
+    values_from = severity,
+    values_fn = list
+  ) %>%
+  unnest(
+    cols = everything()
+  ) %>%
+  select(Shelter:`Protection (HLP)`)
+
+ggpairs(df_corr_all)
+
+cluster_corr_all <- cor(
+  as.matrix(df_corr_all),
+  use = "pairwise.complete.obs"
+) %>%
+  ggcorrplot(
+    type = "lower",
+    lab = TRUE,
+    lab_size = 2,
+    colors = c("#F2645A", "white", "#1EBFB3"),
+    title = "Sector correlations, disaggregated PiN"
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 16,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto",
+      hjust = 1
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 8,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  )
