@@ -70,7 +70,6 @@ generalize_sector <- function(df) {
         "hea",
         "health",
         "salud",
-        "san",
         "hlt",
         "heat"
       ) ~ "Health",
@@ -88,6 +87,7 @@ generalize_sector <- function(df) {
         "prot",
         "pro",
         "gp",
+        "pro-gen pro",
         "protection_general",
         "prt"
       ) ~ "Protection",
@@ -101,7 +101,6 @@ generalize_sector <- function(df) {
       sector %in% c(
         "vbg",
         "protection_gbv",
-        "pro-gen pro",
         "gbv",
         "pro-gbv",
         "gb"
