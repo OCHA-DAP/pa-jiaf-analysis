@@ -87,7 +87,14 @@ get_paths_analysis <- function() {
 
   output_dir <- file.path(
     data_dir,
-    "Data analyzed"
+    "Data analyzed",
+    "PiN"
+  )
+
+  output_dir_sev <- file.path(
+    data_dir,
+    "Data analyzed",
+    "Severity"
   )
 
   list(
@@ -95,6 +102,7 @@ get_paths_analysis <- function() {
     input_dir = file.path(agg_dir, "sectoral_pins"),
     input_hh_dir = file.path(agg_dir, "hh_data"),
     input_indicator_dir = file.path(agg_dir, "indicator_pins"),
-    output_dir = output_dir
+    output_dir = output_dir,
+    output_dir_sev = output_dir_sev
   )
 }

@@ -1,4 +1,3 @@
-library(ggplot2)
 library(tidyverse)
 library(scales)
 library(ggcorrplot)
@@ -20,7 +19,7 @@ df_pins <- read_csv(
 )
 
 ggplot(
-  df_pins %>% filter(sector_group == "sectoral"),
+  df_pins %>% filter(sector_general == "sectoral"),
   aes(
     x = fct_reorder(adm0_pcode, pin),
     y = pin
@@ -68,7 +67,7 @@ ggsave(
 )
 
 write_csv(
-  df_pins %>% filter(sector_group == "sectoral"),
+  df_pins %>% filter(sector_general == "sectoral"),
   file.path(
     file_paths$output_dir,
     "graphs",
@@ -361,7 +360,7 @@ df_sectoral <- df_corr %>%
   left_join(
     filter(
       df_pins,
-      sector_group == "intersectoral"
+      sector_general == "intersectoral"
     ) %>%
       select(
         adm0_pcode,
@@ -390,9 +389,6 @@ df_sectoral <- df_corr %>%
 # plot these as min to max
 
 df_violin <- df_sectoral %>%
-  filter(
-    !(adm0_pcode %in% c("UKR", "COL")) # need to check data first
-  ) %>%
   group_by(sector) %>%
   summarize(
     min_perc = min(pin_percent),
@@ -493,9 +489,6 @@ write_csv(
 # heat map version
 
 fig_heatmap <- df_sectoral %>%
-  filter(
-    !(adm0_pcode %in% c("UKR", "COL")) # need to check data first
-  ) %>%
   mutate(
     sector = factor(sector, levels = levels(df_violin$sector))
   )
