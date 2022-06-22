@@ -87,8 +87,8 @@ generalize_sector <- function(df) {
         "proteccion",
         "prot",
         "pro",
+        "gp",
         "protection_general",
-        "protection_aor",
         "prt"
       ) ~ "Protection",
       sector %in% c(
@@ -104,8 +104,7 @@ generalize_sector <- function(df) {
         "pro-gen pro",
         "gbv",
         "pro-gbv",
-        "gb",
-        "gp"
+        "gb"
       ) ~ "Protection (GBV)",
       sector %in% c(
         "hlp",
@@ -114,7 +113,13 @@ generalize_sector <- function(df) {
         "pro-hlp"
       ) ~ "Protection (HLP)",
       # Droit au Logement, <U+00E0> la Terre et aux Biens
-      sector %in% c("ma", "minas", "lam", "pro-ma") ~ "Protection (MA)",
+      sector %in% c(
+        "ma",
+        "minas",
+        "lam",
+        "protection_aor",
+        "pro-ma"
+      ) ~ "Protection (MA)",
       # lutte anti-mine
       sector %in% c(
         "abris",
@@ -147,7 +152,6 @@ generalize_sector <- function(df) {
     )
   )
 }
-
 
 # Sectoral PiNs
 

@@ -5,6 +5,7 @@ library(janitor)
 # helper functions to get paths
 source(here::here("99_helpers", "helpers.R"))
 
+
 ###################
 #### DATA DIRS ####
 ###################
@@ -18,7 +19,7 @@ file_paths <- get_paths("Mali")
 ocha_fp <- file.path(
   file_paths$ocha_dir,
   stringi::stri_unescape_unicode(
-    "MALI - HNO 2022 - Donn\\u00e9es par indicateur_compilation - VF.xlsx"
+    "MALI - HNO 2022 - Donn\u00e9es par indicateur_compilation - VF.xlsx"
   )
 )
 

@@ -158,7 +158,7 @@ df_prot <- read_excel(
 df_health <- read_excel(
   file.path(
     file_paths$ocha_dir,
-    "CAR_HNO_2022_Sant<U+00E9>_VF.xlsx"
+    stringi::stri_unescape_unicode("CAR_HNO_2022_Sant\u00e9_VF.xlsx")
   ),
   sheet = "2-PIN2021Subpref",
   range = "CT5:DG234"

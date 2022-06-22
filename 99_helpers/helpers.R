@@ -106,7 +106,8 @@ get_paths_analysis <- function() {
 
   output_dir <- file.path(
     data_dir,
-    "Data analyzed"
+    "Data analyzed",
+    "PiN"
   )
 
   list(

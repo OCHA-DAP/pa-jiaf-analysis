@@ -40,8 +40,9 @@ ggplot(
   theme(
     plot.title = element_text(
       face = "bold",
-      size = 22,
+      size = 18,
       margin = margin(10, 10, 10, 10, "pt"),
+      hjust = .5,
       family = "Roboto"
     ),
     axis.text = element_text(
@@ -64,7 +65,7 @@ ggsave(
     "pin_totals",
     "2022_hno_pin_totals.png"
   ),
-  width = 5, height = 5
+  width = 10, height = 5
 )
 
 write_csv(

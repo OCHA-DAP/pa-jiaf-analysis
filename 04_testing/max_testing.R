@@ -34,7 +34,7 @@ df_is <- read_csv(
   )
 ) %>%
   filter(
-    sector_group == "intersectoral"
+    sector_general == "intersectoral"
   ) %>%
   select(
     adm0_pcode,
