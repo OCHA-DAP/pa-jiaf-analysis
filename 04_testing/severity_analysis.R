@@ -1,5 +1,8 @@
 library(tidyverse)
 library(tidytext)
+library(ggcorrplot)
+library(GGally)
+
 source(here::here("99_helpers", "helpers.R"))
 
 file_paths <- get_paths_analysis()
@@ -214,16 +217,24 @@ write_csv(
 )
 
 # First plot the correlations for the full data sample
-df_corr_all <- df %>%
+temp <- df %>%
   filter(
     !is.na(severity),
-    sector_general != "intersectoral",
-    severity > 0,
-    sector != "Displaced pop."
+    sector != "JIAF1.1",
+    severity > 0
+  ) %>%
+  select(
+    adm0_pcode,
+    disaggregation,
+    sector,
+    severity
   ) %>%
   mutate(
-    severity = ifelse(severity > 3, "Yes", "No")
+    severity = ifelse(severity > 2, 1, 0)
   ) %>%
+  arrange(sector)
+
+df_corr_all <- temp %>%
   pivot_wider(
     names_from = sector,
     values_from = severity,
@@ -232,25 +243,54 @@ df_corr_all <- df %>%
   unnest(
     cols = everything()
   ) %>%
-  select(Shelter:`Protection (HLP)`)
+  right_join(
+    temp
+  ) %>%
+  filter(severity == 1)
 
-ggpairs(df_corr_all)
+abc <- df_corr_all %>%
+  select(
+    sector,
+    sort(unique(df_corr_all$sector))
+  ) %>%
+  group_by(
+    sector
+  ) %>%
+  summarise(
+    across(
+      .cols = everything(),
+      ~ ifelse(
+        sum(is.na(.x), na.rm = TRUE) == n(),
+        NA_real_,
+        sum(.x, na.rm = TRUE) / n()
+      )
+    )
+  )
 
-cluster_corr_all <- cor(
-  as.matrix(df_corr_all),
-  use = "pairwise.complete.obs"
-) %>%
+rn <- abc$sector
+
+cluster_corr_all <- abc %>%
+  select(-sector) %>%
+  as.matrix()
+row.names(cluster_corr_all) <- rn
+
+cluster_corr_all %>%
   ggcorrplot(
-    type = "lower",
     lab = TRUE,
-    lab_size = 2,
-    colors = c("#F2645A", "white", "#1EBFB3"),
-    title = "Sector correlations, disaggregated PiN"
+    lab_size = 4
+  ) +
+  coord_flip() +
+  labs(
+    title = paste0(
+      "% of areas with sectoral severity of 3 or above overlapping",
+      "with other sectors having the same range of severity scores"
+    ),
+    x = "sectors with score of 3 or above"
   ) +
   theme(
     plot.title = element_text(
       face = "bold",
-      size = 16,
+      size = 14,
       margin = margin(10, 10, 10, 10, "pt"),
       family = "Roboto",
       hjust = 1
@@ -267,7 +307,7 @@ cluster_corr_all <- cor(
       size = 8,
       family = "Roboto"
     ),
-    legend.position = "bottom",
+    legend.position = "none",
     panel.grid.minor = element_blank(),
     legend.background = element_rect(fill = "transparent"),
     legend.box.background = element_rect(fill = "transparent"),
