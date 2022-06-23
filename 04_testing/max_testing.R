@@ -296,7 +296,7 @@ df_diff_highest_lowest %>%
   theme(
     plot.title = element_text(
       face = "bold",
-      size = 22,
+      size = 18,
       margin = margin(10, 10, 10, 10, "pt"),
       family = "Roboto"
     ),

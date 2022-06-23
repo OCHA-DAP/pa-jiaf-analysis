@@ -122,7 +122,7 @@ cluster_corr_all <- cor(
     plot.title = element_text(
       face = "bold",
       size = 16,
-      margin = margin(10, 10, 10, 10, "pt"),
+      margin = margin(10, 0, 10, 0, "pt"),
       family = "Roboto",
       hjust = 1
     ),

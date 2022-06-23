@@ -53,7 +53,13 @@ df_clusters <- read_excel(
   sheet = "Sector PIN-Severity",
   guess_max = 500
 ) %>%
-  clean_names()
+  clean_names() %>%
+  # Shelter and NFI are combined in every country except Syria
+  mutate(
+    snfi_pin = expss::max_row(nfi_pin, shelter_pin, na.rm = TRUE),
+    snfi_severity = expss::max_row(nfi_severity, shelter_severity, na.rm = TRUE)
+  ) %>%
+  select(-c(nfi_pin, shelter_pin, nfi_severity, shelter_severity))
 
 ########################
 #### DATA WRANGLING ####
@@ -88,42 +94,18 @@ df_combined_all <- left_join(
 # pivoting the pins
 df_pins <- df_combined_all %>%
   pivot_longer(
-    cols = matches("_pin$"),
-    names_to = "sector",
-    values_to = "pin"
+    cols = matches("_pin$|_severity$"),
+    names_to = c("sector", ".value"),
+    names_pattern = "(.*)_(pin|severity)"
+  ) %>%
+  filter(
+    !is.na(pin) & !is.na(severity) & severity > 0
   ) %>%
   mutate(
-    sector = gsub("_pin", "", sector),
     pin = round(replace_na(pin, 0))
   )
 
-# pivoting the severities
-df_scores <- df_combined_all %>%
-  pivot_longer(
-    cols = matches("_severity$"),
-    names_to = "sector",
-    values_to = "score"
-  ) %>%
-  mutate(
-    sector = gsub("_severity", "", sector),
-    score = round(replace_na(score, 0))
-  )
-
-# combining the pins and severities and reformatting
-
-df_syr <- left_join(
-  df_pins,
-  df_scores,
-  by = c(
-    "admin1name_en",
-    "admin1pcode",
-    "admin2name_en",
-    "admin2pcode",
-    "admin3name_en",
-    "admin3pcode",
-    "sector"
-  )
-) %>%
+df_syr <- df_pins %>%
   transmute(
     adm0_name = "Syria",
     adm0_pcode = "SYR",
@@ -133,10 +115,10 @@ df_syr <- left_join(
     adm2_pcode = admin2pcode,
     adm3_name = admin3name_en,
     adm3_pcode = admin3pcode,
-    affected_population = final_est_of_total_pop_aug_2021.x,
+    affected_population = final_est_of_total_pop_aug_2021,
     sector,
     pin,
-    severity = score,
+    severity,
     source = "ocha",
     sector_general = ifelse(
       sector == "intersectoral",

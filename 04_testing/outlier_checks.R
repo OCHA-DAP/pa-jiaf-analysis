@@ -477,7 +477,7 @@ df_diff_max_min %>%
   theme(
     plot.title = element_text(
       face = "bold",
-      size = 22,
+      size = 18,
       colour = "#134373",
       margin = margin(10, 10, 30, 10, "pt"),
       hjust = 0.5
@@ -652,7 +652,7 @@ df_max_sector_freq %>%
   theme(
     plot.title = element_text(
       face = "bold",
-      size = 22,
+      size = 18,
       margin = margin(10, 10, 10, 10, "pt"),
       family = "Roboto"
     ),
