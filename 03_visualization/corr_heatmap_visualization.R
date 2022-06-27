@@ -420,7 +420,7 @@ fig_pin_all <- df_violin %>%
       y = sector,
       label = n_country
     ),
-    x = 1.03,
+    x = 1.28,
     fontface = "bold"
   ) +
   theme_minimal() +

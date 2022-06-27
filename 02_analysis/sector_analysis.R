@@ -32,7 +32,7 @@ max_df <- df %>%
   group_by(
     adm0_name,
     adm0_pcode,
-    sector_group,
+    sector_general,
     sector
   ) %>%
   slice_max(adm_level) %>%
@@ -53,7 +53,7 @@ max_df <- df %>%
     adm0_pcode,
     adm_pcode,
     pop_group,
-    sector_group
+    sector_general
   ) %>%
   summarize(
     lowest_adm_level = unique(adm_level),
@@ -70,12 +70,12 @@ max_df <- df %>%
 # to it
 pct_df <- max_df %>%
   filter(
-    sector_group != "intersectoral"
+    sector_general != "intersectoral"
   ) %>%
   group_by(
     adm0_name,
     adm0_pcode,
-    sector_group,
+    sector_general,
     max_sector
   ) %>%
   summarize(
@@ -97,7 +97,7 @@ pin_df <- max_df %>%
   group_by(
     adm0_name,
     adm0_pcode,
-    sector_group,
+    sector_general,
   ) %>%
   summarize(
     lowest_adm_level = unique(lowest_adm_level),
@@ -110,119 +110,10 @@ pin_df <- max_df %>%
   )
 
 # Make a file with cleaned up cluster names
-cluster_df <-
-  df %>%
-  mutate(sector = tolower(sector)) %>% # clean up cluster names
-  mutate(
-    sector = case_when(
-      sector %in% c("cc", "cccm", "gsat") ~ "CCCM",
-      # gestion des Sites d<U+2019>Accueil Temporaire
-      sector %in% c(
-        "early recovery",
-        "early recovery & livelihoods",
-        "rt",
-        "el",
-        "mpca"
-      ) ~ "ERL",
-      # rt is early recovery, el is emergency livelihoods
-      # and mpca is Multi-Purpose Cash Assistance
-      sector %in% c(
-        "education",
-        "educacion",
-        "educ",
-        "edu",
-        "ed"
-      ) ~ "Education",
-      sector %in% c(
-        "fs",
-        "fsa",
-        "fss",
-        "fsl",
-        "fsc",
-        "food",
-        "food_sec",
-        "fslc",
-        "food security",
-        "food_security",
-        "seguridad_alimentaria",
-        "san_seguridad_alimentaria",
-        "seg_alimentaria",
-        "secal"
-      ) ~ "FS/FSL",
-      # securit<U+00E9> alimentaire
-      sector %in% c(
-        "sante",
-        "he",
-        "health",
-        "salud",
-        "san",
-        "hlt",
-        "heat"
-      ) ~ "Health",
-      sector %in% c(
-        "health & nutrition",
-        "nutrition",
-        "nutricion",
-        "san_nutrition",
-        "san_nutricion",
-        "nut"
-      ) ~ "Nutrition",
-      sector %in% c(
-        "protection",
-        "proteccion",
-        "prot",
-        "pro",
-        "protection_general",
-        "prt",
-        "gp"
-      ) ~ "Protection",
-      sector %in% c(
-        "protection_cp",
-        "ninez",
-        "cp",
-        "child_protection"
-      ) ~ "Protection (CP)",
-      sector %in% c(
-        "vbg",
-        "protection_gbv",
-        "pro-gen pro",
-        "gbv",
-        "gb"
-      ) ~ "Protection (GBV)",
-      sector %in% c("hlp", "ltb", "protection_hlp") ~ "Protection (HLP)",
-      # Droit au Logement, <U+00E0> la Terre et aux Biens
-      sector %in% c("ma", "minas", "protection_aor", "lam") ~ "Protection (MA)",
-      # lutte anti-mine
-      sector %in% c(
-        "abris",
-        "alojamiento_energia_y_enseres",
-        "alojamientos",
-        "abris_ame",
-        "shl",
-        "snfi",
-        "shelter",
-        "shelter & nfis",
-        "shleter&nfis",
-        "shelter and nfi",
-        "sn",
-        "nfi"
-      ) ~ "Shelter",
-      sector %in% c("wash", "wa", "wsh", "eha") ~ "WASH",
-      sector %in% c(
-        "refugees",
-        "refugee response",
-        "migrants"
-      ) ~ "Displaced pop.",
-      sector %in% c(
-        "inter_sectoral",
-        "intersectorial",
-        "intersectoral",
-        "itc"
-      ) ~ "intersectoral"
-    )
-  ) %>%
-  filter(sector != "intersectoral")
-
+cluster_df <- filter(
+  df,
+  sector != "Intersectoral"
+)
 
 # Clean up output file for actual output
 write_csv(

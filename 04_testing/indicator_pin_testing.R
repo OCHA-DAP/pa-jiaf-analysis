@@ -22,7 +22,7 @@ df_sectors <- read_csv(
   )
 ) %>%
   filter(adm0_pcode %in% df_indicators$adm0_pcode) %>%
-  rename(pin_calculation = sector_group)
+  rename(pin_calculation = sector_general)
 
 max_df <- df_indicators %>%
   pivot_longer(

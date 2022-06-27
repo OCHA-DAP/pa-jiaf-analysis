@@ -16,9 +16,6 @@ df_pins <- read_csv(
     "2022_hno_pin_totals.csv"
   )
 ) %>%
-  filter(
-    sector_group != "sectoral_cluster",
-  ) %>%
   mutate(
     scenario = case_when(
       adm0_pcode == "IRQ" ~ "A",
@@ -31,14 +28,14 @@ df_pins <- read_csv(
     adm0_pcode
   ) %>%
   mutate(
-    percent_diff = (pin - pin[sector_group == "intersectoral"])
-    / pin[sector_group == "intersectoral"] * 100
+    percent_diff = (pin - pin[sector_general == "intersectoral"])
+    / pin[sector_general == "intersectoral"] * 100
   ) %>%
   ungroup() %>%
   mutate(
     sector_group = case_when(
-      sector_group == "intersectoral" ~ "JIAF 1.1",
-      sector_group == "sectoral" ~ "HPC 2023",
+      sector_general == "intersectoral" ~ "JIAF 1.1",
+      sector_general == "sectoral" ~ "HPC 2023",
     ),
     change_direction = ifelse(percent_diff > 0, "increase", "decrease")
   )
@@ -67,6 +64,11 @@ df_pins %>%
     fill = "Change\nw.r.t.\nJIAF 1.1"
   )
 
-ggsave(file.path(save_path, "m-twg_2022_hno_pct_difference.png"),
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "m-twg_2022_hno_pct_difference.png"
+  ),
   width = 3840, height = 2018, units = "px"
 )

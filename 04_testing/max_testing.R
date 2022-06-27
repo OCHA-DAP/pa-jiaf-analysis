@@ -34,7 +34,7 @@ df_is <- read_csv(
   )
 ) %>%
   filter(
-    sector_group == "intersectoral"
+    sector_general == "intersectoral"
   ) %>%
   select(
     adm0_pcode,
@@ -519,7 +519,6 @@ df_perc_pin_drop %>%
       family = "Roboto"
     )
   )
-
 
 ggsave(
   file.path(

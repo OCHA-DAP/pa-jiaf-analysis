@@ -17,16 +17,15 @@ df_pins <- read.csv(
 ) %>%
   group_by(adm0_pcode) %>%
   mutate(
-    percent_diff = (pin - pin[sector_group == "intersectoral"])
-    / pin[sector_group == "intersectoral"] * 100
+    percent_diff = (pin - pin[sector_general == "intersectoral"])
+    / pin[sector_general == "intersectoral"] * 100
   ) %>%
   ungroup() %>%
   mutate(
     sector_group = case_when(
-      sector_group == "intersectoral" ~ "JIAF 1.1",
-      sector_group == "sectoral" ~ "Option 1 (no adjustment)",
-      sector_group == "sectoral_cluster" ~ "Cluster totals"
-    ),
+      sector_general == "intersectoral" ~ "JIAF 1.1",
+      sector_general == "sectoral" ~ "Option 1 (no adjustment)"
+    )
   )
 
 ##################
