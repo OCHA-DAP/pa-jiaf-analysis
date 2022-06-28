@@ -190,7 +190,20 @@ df_bdi_indicator <- df_indicators %>%
   )
 
 df_bdi_indicator_sev <- df_bdi_indicator %>%
-  filter(severity > 0)
+  filter(severity > 0) %>%
+  mutate(
+    sector = case_when(
+      indicator_number %in% 1:3 ~ "Protection",
+      indicator_number %in% 4:6 ~ "Protection (CP)",
+      indicator_number %in% 7:8 ~ "Protection (GBV)",
+      indicator_number %in% 9:12 ~ "Shelter",
+      indicator_number %in% 13:14 ~ "Health",
+      indicator_number == 15 ~ "FS/FSL",
+      indicator_number %in% 16:22 ~ "Education",
+      indicator_number %in% 23:24 ~ "WASH",
+      indicator_number %in% 25:30 ~ "Nutrition"
+    )
+  )
 
 write_csv(
   df_bdi,

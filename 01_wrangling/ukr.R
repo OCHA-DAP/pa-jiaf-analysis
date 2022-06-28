@@ -423,7 +423,15 @@ df_ukr_indicator <- df_indicators %>%
     indicator_number,
     indicator_desc = indicator_text,
     pin = round(as.numeric(calculated_pi_n)),
-    severity = calculated_severity
+    severity = calculated_severity,
+    sector = case_when(
+      indicator_number %in% 1:2 ~ "Education",
+      indicator_number %in% c(3:5, 8) ~ "FS/FSL",
+      indicator_number %in% c(6:7, 9:11) ~ "Protection",
+      indicator_number %in% 12:14 ~ "WASH",
+      indicator_number %in% 15:16 ~ "Shelter",
+      indicator_number %in% 17:20 ~ "Health"
+    )
   )
 
 write_csv(

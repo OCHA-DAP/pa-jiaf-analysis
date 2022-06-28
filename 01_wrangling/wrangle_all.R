@@ -248,6 +248,9 @@ df_ind_sev_data <- map_dfr(
 )
 
 df_ind_sev_data %>%
+  filter(
+    !is.na(severity) & severity > 0
+  ) %>%
   write_csv(
     file.path(
       file_paths$agg_dir,

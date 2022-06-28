@@ -348,7 +348,20 @@ df_lby_indicator <- df_indicators %>%
     critical = critical_status == "Yes",
     indicator_desc = indicator_text,
     pin = round(calculated_pi_n),
-    severity = calculated_severity
+    severity = calculated_severity,
+    sector = case_when(
+      # the original indicator numbers seem random as they don't
+      # follow each other, but used it anyway since doesn't change anything
+      indicator_number == 1 ~ "Shelter",
+      indicator_number %in% c(5, 22) ~ "FS/FSL",
+      indicator_number == 6 ~ "Health",
+      indicator_number == 8 ~ "WASH",
+      indicator_number %in% 11:13 ~ "Education",
+      indicator_number == 14 ~ "ERL",
+      indicator_number == 17 ~ "Protection",
+      indicator_number == 19 ~ "Protection (CP)",
+      indicator_number == 20 ~ "Protection (MA)"
+    )
   )
 
 write_csv(

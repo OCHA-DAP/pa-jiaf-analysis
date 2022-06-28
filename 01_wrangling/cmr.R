@@ -199,7 +199,21 @@ df_cmr_indicator <- df_indicators %>%
   )
 
 df_cmr_indicator_sev <- df_cmr_indicator %>%
-  filter(severity > 0)
+  filter(severity > 0) %>%
+  mutate(
+    sector = case_when(
+      indicator_number %in% c(1, 3) ~ "FS/FSL",
+      indicator_number == 2 ~ "Education",
+      indicator_number == 4 ~ "Health",
+      indicator_number %in% 5:7 ~ "Nutrition",
+      indicator_number %in% 8:9 ~ "Protection",
+      indicator_number %in% 10:12 ~ "Protection (CP)",
+      indicator_number == 13 ~ "Protection (GBV)",
+      indicator_number == 14 ~ "Shelter",
+      indicator_number %in% 15:16 ~ "WASH",
+      indicator_number == 17 ~ "Displaced pop."
+    )
+  )
 
 write_csv(
   df_cmr,

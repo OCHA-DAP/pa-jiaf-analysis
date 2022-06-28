@@ -74,7 +74,14 @@ df_ind_sev <- read_excel(
     indicator_number,
     indicator_desc = indicator_text,
     critical = critical_status == "Yes",
-    severity = calculated_severity
+    severity = calculated_severity,
+    sector = case_when(
+      indicator_number %in% 1:3 ~ "Education",
+      indicator_number == 4 ~ "Nutrition",
+      indicator_number %in% 5:6 ~ "Health",
+      indicator_number == 7 ~ "FS/FSL",
+      indicator_number == 8 ~ "WASH"
+    )
   )
 
 ########################

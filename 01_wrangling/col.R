@@ -158,7 +158,17 @@ df_col_indicator <- df_indicators %>%
     indicator_number = indicator,
     indicator_desc = X2,
     pin = round(as.numeric(crit)),
-    severity = na_cri
+    severity = na_cri,
+    sector = case_when(
+      indicator_number %in% 1:2 ~ "WASH",
+      indicator_number == 3 ~ "FS/FSL",
+      indicator_number == 4 ~ "Nutrition",
+      indicator_number %in% 5:6 ~ "Health",
+      indicator_number %in% c(7, 14) ~ "ERL",
+      indicator_number %in% c(8, 12:13) ~ "Protection",
+      indicator_number %in% 9:10 ~ "Education",
+      indicator_number == 11 ~ "Shelter"
+    )
   )
 
 write_csv(

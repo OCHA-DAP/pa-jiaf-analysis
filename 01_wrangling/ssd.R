@@ -270,7 +270,17 @@ df_ssd_indicator <- df_indicators %>%
     critical = critical_status == "Yes",
     indicator_desc = indicator_text,
     pin = replace_na(round(calculated_pi_n), 0),
-    severity = calculated_severity
+    severity = calculated_severity,
+    sector = case_when(
+      indicator_number %in% 1:3 ~ "FS/FSL",
+      indicator_number == 4 ~ "Nutrition",
+      indicator_number %in% 5:6 ~ "Shelter",
+      indicator_number %in% 7:10 ~ "Education",
+      indicator_number %in% 11:12 ~ "CCCM",
+      indicator_number %in% 13:15 ~ "WASH",
+      indicator_number %in% 16:20 ~ "Health",
+      indicator_number %in% 21:27 ~ "Protection"
+    )
   )
 
 write_csv(

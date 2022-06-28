@@ -344,7 +344,19 @@ df_hti_indicator <- df_hti_cleaning %>%
     critical = indicator_number %in% c(2, 3, 5, 7, 9, 10, 12:16, 21),
     indicator_desc,
     pin,
-    severity
+    severity,
+    sector = case_when(
+      indicator_number %in% c(1, 3, 6, 20) ~ "Protection (MA)",
+      indicator_number == 2 ~ "WASH",
+      indicator_number %in% c(4, 9, 15, 19) ~ "Health",
+      indicator_number == 5 ~ "Shelter",
+      indicator_number %in% 7:8 ~ "Education",
+      indicator_number %in% c(10, 17) ~ "Nutrition",
+      indicator_number %in% c(11, 21) ~ "Protection (GBV)",
+      indicator_number == 12 ~ "FS/FSL",
+      indicator_number %in% 13:14 ~ "Protection",
+      indicator_number %in% c(16, 18) ~ "Protection (CP)"
+    )
   )
 
 write_csv(
