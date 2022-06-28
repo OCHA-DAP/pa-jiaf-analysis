@@ -47,26 +47,41 @@ temp <- df %>%
   summarize(
     sum_above_2 = sum(above_2, na.rm = TRUE),
     .groups = "drop"
+  ) %>%
+  group_by(
+    adm0_pcode,
+    sum_above_2
+  ) %>%
+  summarize(
+    n = n(),
+    .groups = "drop_last"
+  ) %>%
+  mutate(
+    perc = n / sum(n)
   )
 
 temp %>%
   ggplot() +
-  geom_density(
-    aes(x = sum_above_2),
+  geom_bar(
+    aes(
+      x = sum_above_2,
+      y = perc
+    ),
     fill = "#1EBFB3",
-    na.rm = TRUE
+    na.rm = TRUE,
+    stat = "identity"
   ) +
   facet_wrap(~adm0_pcode, scales = "fixed") +
   labs(
-    y = "Density of number of sectors",
-    title = "Distribution of number of sectors that are 3 or above by geographic area", # nolint
-    x = "Number of sectors"
-  ) +
-  scale_fill_manual(
-    values = "#FFE0B2"
+    y = "% of areas",
+    title = "Distribution of # of sectors that are 3 or above by geographic area", # nolint
+    x = "# of sectors with severity 3 or above"
   ) +
   scale_x_continuous(
     breaks = scales::pretty_breaks()
+  ) +
+  scale_y_continuous(
+    labels = scales::percent_format(accuracy = 1)
   ) +
   theme_minimal() +
   theme(
@@ -103,7 +118,7 @@ ggsave(
   file.path(
     file_paths$output_dir_sev,
     "graphs",
-    "2022_number_sectors_3_density.png"
+    "2022_number_sectors_3_above.png"
   ),
   height = 10,
   width = 14
@@ -115,9 +130,13 @@ write_csv(
     file_paths$output_dir_sev,
     "graphs",
     "datasets",
-    "2022_number_sectors_3_density.csv"
+    "2022_number_sectors_3_above.csv"
   )
 )
+
+##########################
+#### AREAS 3 OR ABOVE ####
+##########################
 
 temp <- df %>%
   filter(
@@ -149,9 +168,9 @@ temp %>%
   ) +
   labs(
     fill = "% of areas with score 3 or above",
-    y = "Sector",
+    y = "",
     x = "",
-    title = "Sectoral severity as % of geographical areas with score 3 or above"
+    title = "% of geographical areas with severity 3 or above"
   ) +
   theme(
     plot.title = element_text(
@@ -275,7 +294,7 @@ percent_overlap <- function(df, severity_cutoff = 3) {
         ifelse(severity_cutoff == 5, "5", paste(severity_cutoff, "or above")),
         "overlapping with other sectors in the same range of severity"
       ),
-      x = "Nominator",
+      x = "Numerator",
       y = "Denominator",
       fill = "% of areas overlapping"
     ) +
@@ -367,6 +386,10 @@ percent_overlap <- function(df, severity_cutoff = 3) {
   )
 }
 
+##########################
+#### SEVERITY OVERLAP ####
+##########################
+
 df_sev <- df %>%
   filter(
     !is.na(severity),
@@ -383,6 +406,10 @@ df_sev <- df %>%
 percent_overlap(df_sev, 3)
 percent_overlap(df_sev, 4)
 percent_overlap(df_sev, 5)
+
+#########################################
+#### DISTRIBUTION OF SEVERITY SCORES ####
+#########################################
 
 # percent of severity scores for each sector across all geographical areas
 temp <- df_sev %>%
@@ -424,9 +451,9 @@ temp %>%
     x = "",
     y = "",
     fill = "Severity Scores",
-    title = paste(
-      "% of geographical areas with severity scores of 1 to 5 per",
-      "each sector across all countries"
+    title = paste0(
+      "% of geographical areas with severity scores of 1 to 5, ",
+      "all sectors across all countries"
     )
   ) +
   scale_fill_gradient(
@@ -514,38 +541,27 @@ df_relation <- df %>%
 df_relation %>%
   ggplot(
     aes(
-      x = perc_pin,
-      y = ..scaled..,
-      fill = factor(severity)
+      x = severity,
+      y = perc_pin,
+      group = severity
     )
   ) +
-  geom_density(
-    alpha = 0.5
+  geom_boxplot(
+    color = "#1EBFB3"
   ) +
   facet_wrap(
     ~adm0_pcode
   ) +
   labs(
-    y = "Density",
+    y = "PiN (% of affected population)",
     title = paste(
-      "Severity score distribution over percentage of the affected population",
-      "in need by Country"
+      "% of population in need relative to area level severity,",
+      "all sectors"
     ),
-    x = "PiN (% of the affected population)",
-    fill = "Severity scores"
+    x = "Severity score"
   ) +
-  scale_x_continuous(
-    labels = scales::percent_format(),
-    breaks = scales::pretty_breaks()
-  ) +
-  scale_fill_manual(
-    values = c(
-      "#03DAC6",
-      "#CDDC39",
-      "#2196F3",
-      "#9C27B0",
-      "#F44336"
-    )
+  scale_y_continuous(
+    labels = scales::percent_format(1)
   ) +
   theme_minimal() +
   theme(
@@ -600,41 +616,34 @@ ggsave(
   height = 11
 )
 
+##################################
+#### SEVERITY - PIN BY SECTOR ####
+##################################
+
 df_relation %>%
   ggplot(
     aes(
-      x = perc_pin,
-      y = ..scaled..,
-      fill = factor(severity)
+      x = severity,
+      y = perc_pin,
+      group = severity
     )
   ) +
-  geom_density(
-    alpha = 0.5
+  geom_boxplot(
+    color = "#1EBFB3"
   ) +
   facet_wrap(
     ~sector
   ) +
   labs(
-    y = "Density",
+    y = "PiN (% of affected population)",
     title = paste(
-      "Severity score distribution over percentage of the affected population",
-      "in need by Sector"
+      "% of population in need relative to area level severity,",
+      "all countries"
     ),
-    x = "PiN (% of the affected population)",
-    fill = "Severity scores"
+    x = "Severity score"
   ) +
-  scale_x_continuous(
-    labels = scales::percent_format(),
-    breaks = scales::pretty_breaks()
-  ) +
-  scale_fill_manual(
-    values = c(
-      "#03DAC6",
-      "#CDDC39",
-      "#2196F3",
-      "#9C27B0",
-      "#F44336"
-    )
+  scale_y_continuous(
+    labels = scales::percent_format(1)
   ) +
   theme_minimal() +
   theme(
