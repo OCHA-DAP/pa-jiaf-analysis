@@ -35,7 +35,8 @@ df_ocha <- read_excel(
     adm2_pcode = com_p_code,
     affected_population = population,
     sector = "intersectoral",
-    severity = round(vc, 0),
+    severity = round(vc),
+    severity_unadjusted = round(vs),
     pin = as.numeric(pi_n),
     source = "ocha",
     sector_general = "intersectoral"
@@ -60,7 +61,7 @@ df_cluster_fs <- read_excel(
     adm2_name = commune,
     adm2_pcode = pcode_com,
     sector = "fsc",
-    severity = round(x18, 0),
+    severity = round(x18),
     pin = as.numeric(pin),
     source = "ocha",
     sector_general = "sectoral"
@@ -149,7 +150,7 @@ df_cluster_cp <- read_excel(
     adm2_pcode = pcode_com,
     sector = "child_protection",
     pin = as.numeric(x45),
-    severity = ifelse(pin == 0, 1, as.numeric(x46)),
+    severity = as.numeric(x46),
     source = "ocha",
     sector_general = "sectoral"
   )
@@ -159,19 +160,27 @@ df_cluster_mig <- read.csv(
   file.path(
     file_paths$ocha_dir,
     "HTI_HNO 2022 - PROTECTION MIGRANTS.csv"
-  ),
-) %>%
+  )
+)
+
+names(df_cluster_mig) <-
+  stringi::stri_trans_general(
+    names(df_cluster_mig),
+    "ASCII"
+  )
+
+df_cluster_mig <- df_cluster_mig %>%
   clean_names() %>%
   transmute(
     adm0_name = "Haiti",
     adm0_pcode = "HTI",
-    adm1_name = departement,
+    adm1_name = i_da_partement,
     adm1_pcode = pcode_dep,
     adm2_name = commune,
     adm2_pcode = pcode_com,
     sector = "migrants",
     pin = parse_number(pin),
-    severity = ifelse(pin == 0, 1, as.numeric(severite)),
+    severity = as.numeric(severite),
     source = "ocha",
     sector_general = "sectoral"
   )
@@ -197,7 +206,7 @@ df_cluster_gbv <- read_excel(
     adm2_pcode = pcode_com,
     sector = "gbv",
     pin = as.numeric(pin),
-    severity = ifelse(pin == 0, 1, as.numeric(severite)),
+    severity = as.numeric(severite),
     source = "ocha",
     sector_general = "sectoral"
   )
@@ -222,11 +231,7 @@ df_cluster_health <- read_excel(
     adm2_pcode = com_p_code,
     sector = "health",
     pin = as.numeric(pin),
-    severity = ifelse(
-      pin == 0,
-      1,
-      as.numeric(ronde_utiliser_pour_repartition_du_pin_entre_niveaux)
-    ),
+    severity = as.numeric(ronde_utiliser_pour_repartition_du_pin_entre_niveaux),
     source = "ocha",
     sector_general = "sectoral"
   )
@@ -290,6 +295,20 @@ df_hti <- bind_rows(
     affected_population
   ))
 
+df_hti_sev <- df_hti %>%
+  bind_rows(
+    df_hti %>%
+      filter(sector == "intersectoral") %>%
+      mutate(
+        severity = severity_unadjusted,
+        sector = "intersectoral_unadjusted"
+      )
+  ) %>%
+  select(-severity_unadjusted)
+
+df_hti <- df_hti %>%
+  select(-severity_unadjusted)
+
 df_hti_cleaning <- df_indicator %>%
   select(-matches("^x[1-5]"), -c(
     disaster_risk,
@@ -334,6 +353,16 @@ write_csv(
 )
 
 write_csv(
+  df_hti,
+  file_paths$save_path_sev
+)
+
+write_csv(
   df_hti_indicator,
   file_paths$save_path_indicator
+)
+
+write_csv(
+  df_hti_indicator,
+  file_paths$save_path_indicator_sev
 )

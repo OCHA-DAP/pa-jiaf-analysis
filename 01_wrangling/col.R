@@ -27,13 +27,11 @@ df_ocha_raw <- read_excel(
 ) %>%
   clean_names()
 
-ocha_fp <- file.path(
-  file_paths$ocha_dir,
-  "PIN intersectorial_Indicadores_CH_VF2022.xlsx"
-)
-
 df_indicators <- read_excel(
-  ocha_fp,
+  file.path(
+    file_paths$ocha_dir,
+    "PIN intersectorial_Indicadores_CH_VF2022.xlsx"
+  ),
   sheet = "FINAL PIN y NODOS",
   col_names = FALSE
 )
@@ -46,10 +44,10 @@ df_indicators <- read_excel(
 # get pcodes data to bring in names and adm1 pcodes later
 df_pcodes <- df_ocha_raw %>%
   transmute(
-    adm1_es = departamento,
+    adm1_name = departamento,
     adm2_file_code = codigo_divipola,
     adm2_pcode = paste0("CO", str_pad(codigo_divipola, 5, pad = 0)),
-    adm2_es = municipio,
+    adm2_name = municipio,
     adm1_pcode = substr(adm2_pcode, 1, 4),
     adm0_pcode = "COL"
   )
@@ -67,7 +65,7 @@ df_ocha <- df_ocha_raw %>%
   ) %>%
   mutate( # add severity for subset of FSN PiN
     severidad_san_nutricion = severidad_san,
-    severidad_seguridad_alimentaria = severidad_san
+    severidad_san_seguridad_alimentaria = severidad_san
   ) %>%
   pivot_longer(
     cols = matches("^pin|^sever"),
@@ -82,8 +80,9 @@ df_ocha <- df_ocha_raw %>%
     pin = ifelse(
       severidad < 3 & sector == "intersectorial",
       0,
-      pin
-    )
+      round(pin)
+    ),
+    severity = severidad
   )
 
 ############################
@@ -96,19 +95,20 @@ df_col <- right_join(
   df_ocha,
   by = "adm2_file_code"
 ) %>%
-  filter(!is.na(adm1_es)) %>%
+  filter(!is.na(adm1_name)) %>%
   transmute(
     adm0_name = "Colombia",
     adm0_pcode,
-    adm1_name = adm1_es,
+    adm1_name,
     adm1_pcode,
-    adm2_name = adm2_es,
+    adm2_name,
     adm2_pcode,
     affected_population,
     sector,
     pin = round(replace_na(pin, 0), 0),
     # 7 cases where the pin is bit higher than the population
     pin = ifelse(pin > affected_population, affected_population, pin),
+    severity,
     source = "ocha",
     sector_general = ifelse(
       sector == "intersectorial",
@@ -167,6 +167,16 @@ write_csv(
 )
 
 write_csv(
+  df_col,
+  file_paths$save_path_sev
+)
+
+write_csv(
   df_col_indicator,
   file_paths$save_path_indicator
+)
+
+write_csv(
+  df_col_indicator,
+  file_paths$save_path_indicator_sev
 )

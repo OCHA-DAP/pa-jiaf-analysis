@@ -177,7 +177,7 @@ df_organized <-
     )],
     sector = ifelse(sector == "inter_sectoral", "intersectoral", sector),
     pin = round(pin),
-    severity = ifelse(pin == 0, 1, score),
+    severity = score,
     source = "ocha",
     sector_general = ifelse(
       sector == "intersectoral",
@@ -227,4 +227,9 @@ df_som <- df_organized %>%
 write_csv(
   df_som,
   file_paths$save_path
+)
+
+write_csv(
+  df_som,
+  file_paths$save_path_sev
 )

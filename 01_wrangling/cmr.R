@@ -58,6 +58,43 @@ df_indicators <- read_excel(
 ) %>%
   clean_names()
 
+df_sev <- read_excel(
+  indicator_fp,
+  sheet = "Step 5-Severity",
+  skip = 1
+) %>%
+  clean_names() %>%
+  # final severity is the same as JIAF1.1 severity
+  pivot_longer(
+    cols = severity_corrected_for_critical_max_rounded:wash,
+    values_to = "severity",
+    names_to = "sector"
+  ) %>%
+  mutate(
+    sector = case_when(
+      sector == "severity_corrected_for_critical_max_rounded" ~ "intersectoral",
+      sector == "er" ~ "Early Recovery",
+      sector == "fsl" ~ "Food security",
+      sector == "nut" ~ "Nutrition",
+      sector == "pro" ~ "Protection",
+      sector == "refugees" ~ "Refugee Response",
+      sector == "wash" ~ "WASH",
+      sector == "edu" ~ "Education",
+      sector == "health" ~ "Health",
+      sector == "esnfi" ~ "Shelter and NFI"
+    )
+  ) %>%
+  transmute(
+    adm0_name = "Cameroon",
+    adm0_pcode = "CMR",
+    adm1_name = adm1_state,
+    adm1_pcode,
+    adm2_name = adm2_county,
+    adm2_pcode,
+    sector,
+    severity
+  )
+
 ########################
 #### DATA WRANGLING ####
 ########################
@@ -82,7 +119,7 @@ df_organized <- df_ocha_raw %>%
     age,
     sex = sexe,
     population_group = gsub("n_", "", population_group),
-    pin = replace_na(value, 0),
+    pin = round(replace_na(value, 0)),
     source = "ocha",
     sector_general = ifelse(
       sector == "intersectoral",
@@ -115,6 +152,24 @@ df_cmr <- df_organized %>%
     )
   )
 
+temp <- df_cmr %>%
+  group_by(
+    adm0_name,
+    adm0_pcode,
+    adm1_name,
+    adm1_pcode,
+    adm2_name,
+    adm2_pcode,
+    sector
+  ) %>%
+  summarize(
+    pin = sum(pin),
+    .groups = "drop"
+  )
+
+df_cmr_sev <- df_sev %>%
+  left_join(temp)
+
 df_cmr_indicator <- df_indicators %>%
   separate(
     col = key,
@@ -143,6 +198,8 @@ df_cmr_indicator <- df_indicators %>%
     severity = calculated_severity
   )
 
+df_cmr_indicator_sev <- df_cmr_indicator %>%
+  filter(severity > 0)
 
 write_csv(
   df_cmr,
@@ -150,6 +207,16 @@ write_csv(
 )
 
 write_csv(
+  df_cmr_sev,
+  file_paths$save_path_sev
+)
+
+write_csv(
   df_cmr_indicator,
   file_paths$save_path_indicator
+)
+
+write_csv(
+  df_cmr_indicator_sev,
+  file_paths$save_path_indicator_sev
 )

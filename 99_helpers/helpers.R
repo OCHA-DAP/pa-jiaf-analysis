@@ -43,6 +43,7 @@ get_paths <- function(country, country_name = NULL) {
   )
 
   fn <- glue::glue("{iso3}_pins_2022.csv")
+  fn_sev <- glue::glue("{iso3}_sev_2022.csv")
 
   # file path to save sectoral pin data
   save_path <- file.path(
@@ -60,6 +61,22 @@ get_paths <- function(country, country_name = NULL) {
     fn
   )
 
+  # file path to save sectoral sev data
+  save_path_sev <- file.path(
+    data_dir,
+    aggregated_data_dir,
+    "sectoral_sev",
+    fn_sev
+  )
+
+  # file path to save indicator severity data
+  save_path_indicator_sev <- file.path(
+    data_dir,
+    aggregated_data_dir,
+    "indicator_sev",
+    fn_sev
+  )
+
   # file path to save hh data
   save_path_hh_data <- file.path(
     data_dir,
@@ -72,8 +89,10 @@ get_paths <- function(country, country_name = NULL) {
     ocha_dir = ocha_dir,
     cluster_dir = cluster_dir,
     save_path = save_path,
+    save_path_sev = save_path_sev,
     save_path_hh_data = save_path_hh_data,
-    save_path_indicator = save_path_indicator
+    save_path_indicator = save_path_indicator,
+    save_path_indicator_sev = save_path_indicator_sev
   )
 }
 
@@ -102,6 +121,8 @@ get_paths_analysis <- function() {
     input_dir = file.path(agg_dir, "sectoral_pins"),
     input_hh_dir = file.path(agg_dir, "hh_data"),
     input_indicator_dir = file.path(agg_dir, "indicator_pins"),
+    input_sev_sector_dir = file.path(agg_dir, "sectoral_sev"),
+    input_sev_indicator_dir = file.path(agg_dir, "indicator_sev"),
     output_dir = output_dir,
     output_dir_sev = output_dir_sev
   )

@@ -35,11 +35,11 @@ df_pins <- read.csv(
 ggplot(
   df_pins,
   aes(
-    fill = sector_group,
+    fill = sector_general,
     y = pin,
     x = adm0_pcode,
     label = ifelse(
-      sector_group == "JIAF 1.1",
+      sector_general == "JIAF 1.1",
       "",
       paste0(
         round(percent_diff, digits = 0),
@@ -124,7 +124,7 @@ write_csv(
 
 # difference with intersectoral
 df_pins %>%
-  filter(sector_group != "JIAF 1.1") %>%
+  filter(sector_general != "JIAF 1.1") %>%
   mutate(
     number_disagg = factor(
       number_disagg,
@@ -149,7 +149,7 @@ df_pins %>%
   theme(
     plot.title = element_text(
       face = "bold",
-      size = 22,
+      size = 18,
       margin = margin(10, 10, 10, 10, "pt"),
       family = "Roboto"
     ),
@@ -194,7 +194,7 @@ ggsave(
 
 write_csv(
   df_pins %>%
-    filter(sector_group != "JIAF 1.1") %>%
+    filter(sector_general != "JIAF 1.1") %>%
     mutate(number_disagg = factor(number_disagg,
       levels = 0:3
     )),

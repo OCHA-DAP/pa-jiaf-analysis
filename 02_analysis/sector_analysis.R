@@ -90,7 +90,6 @@ pct_df <- max_df %>%
   arrange(desc(pin), .by_group = TRUE) %>%
   ungroup()
 
-
 # calculate final pin for each
 # method and country
 pin_df <- max_df %>%
@@ -110,10 +109,9 @@ pin_df <- max_df %>%
   )
 
 # Make a file with cleaned up cluster names
-cluster_df <- filter(
-  df,
-  sector != "Intersectoral"
-)
+cluster_df <-
+  df %>%
+  filter(!(sector %in% c("Intersectoral", "JIAF 1.1")))
 
 # Clean up output file for actual output
 write_csv(

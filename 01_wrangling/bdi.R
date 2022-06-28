@@ -1,4 +1,5 @@
 library(tidyverse)
+library(stringi)
 library(readxl)
 library(janitor)
 
@@ -26,7 +27,10 @@ df_ocha_raw <- read_excel(
   sheet = "PIN Overview-Expert Judgement"
 ) %>%
   clean_names() %>%
-  drop_na(x1)
+  drop_na(x1) %>%
+  mutate(
+    population = stri_trans_general(population, "ASCII")
+  )
 
 df_ocha_refugees <- read_excel(
   ocha_fp,
@@ -56,11 +60,40 @@ df_population <- read_excel(
 ) %>%
   clean_names() %>%
   mutate(
-    population_group = case_when(
-      group == "Autres Personnes vuln<U+00E9>rables" ~ "APV",
-      group == "Rapatries" ~ "Rapatri<U+00E9>s",
-      TRUE ~ group
+    group = stri_trans_general(group, id = "ASCII"),
+    population_group = ifelse(group == "Autres Personnes vulnerables",
+      "APV",
+      group
     )
+  )
+
+df_severity <- read_excel(
+  ocha_fp,
+  sheet = "Step 6-PiN"
+) %>%
+  clean_names() %>%
+  left_join(df_ocha_pcode_extract) %>%
+  separate(key, c("adm2", "population_group"), sep = "_") %>%
+  transmute(
+    adm0_name = "Burundi",
+    adm0_pcode = "BDI",
+    adm1_name = adm1_state,
+    adm1_pcode,
+    adm2_name = adm2_county,
+    adm2_pcode,
+    population_group = stri_trans_general(population_group, id = "ASCII"),
+    affected_population = population,
+    pin = round(max_sector),
+    intersectoral_unadjusted = mean_of_max_50_percent_here_of_23_severity,
+    intersectoral = severity_corrected_for_critical_max_rounded
+  ) %>%
+  pivot_longer(
+    cols = starts_with("intersectoral"),
+    names_to = "sector",
+    values_to = "severity"
+  ) %>%
+  mutate(
+    sector_general = "intersectoral"
   )
 
 ########################
@@ -107,7 +140,7 @@ df_refugees_cleaned <- df_ocha_refugees %>%
     )],
     population_group = "refugees",
     affected_population = round(total_64), # all refugees are in need
-    sector = "refugees",
+    sector = "Refugees",
     pin = total_64,
     source = "ocha",
     sector_general = "sectoral"
@@ -148,7 +181,7 @@ df_bdi_indicator <- df_indicators %>%
     adm1_pcode,
     adm2_name,
     adm2_pcode,
-    population_group,
+    population_group = stri_trans_general(population_group, "ASCII"),
     indicator_number,
     critical = critical_status == "Oui",
     indicator_desc = indicator_text,
@@ -156,12 +189,25 @@ df_bdi_indicator <- df_indicators %>%
     severity = calculated_severity
   )
 
+df_bdi_indicator_sev <- df_bdi_indicator %>%
+  filter(severity > 0)
+
 write_csv(
   df_bdi,
   file_paths$save_path
 )
 
 write_csv(
+  df_severity,
+  file_paths$save_path_sev
+)
+
+write_csv(
   df_bdi_indicator,
   file_paths$save_path_indicator
+)
+
+write_csv(
+  df_bdi_indicator_sev,
+  file_paths$save_path_indicator_sev
 )

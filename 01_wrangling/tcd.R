@@ -33,6 +33,50 @@ df_population <- read_excel(
 ) %>%
   clean_names()
 
+df_sev <- read_excel(
+  ocha_fp,
+  sheet = "Step 5-Severity",
+  skip = 1
+) %>%
+  clean_names() %>%
+  filter(!is.na(adm1_state)) %>%
+  transmute(
+    adm0_name = "Chad",
+    adm0_pcode = "TCD",
+    adm1_name = adm1_state,
+    adm1_pcode,
+    adm2_name = adm2_county,
+    adm2_pcode,
+    intersectoral = severity_corrected_for_critical_max_rounded,
+    intersectoral_unadjusted = mean_of_max_50_percent_here_of_23_severity
+  ) %>%
+  type_convert() %>%
+  pivot_longer(
+    c(intersectoral, intersectoral_unadjusted),
+    names_to = "sector",
+    values_to = "severity"
+  )
+
+df_ind_sev <- read_excel(
+  ocha_fp,
+  sheet = "Step 4-Long Data"
+) %>%
+  clean_names() %>%
+  filter(row_number() > 2) %>%
+  left_join(df_sev, by = c("admin_2_p_code" = "adm2_pcode")) %>%
+  transmute(
+    adm0_name,
+    adm0_pcode,
+    adm1_name,
+    adm1_pcode,
+    adm2_name,
+    adm2_pcode = admin_2_p_code,
+    indicator_number,
+    indicator_desc = indicator_text,
+    critical = critical_status == "Yes",
+    severity = calculated_severity
+  )
+
 ########################
 #### DATA WRANGLING ####
 ########################
@@ -62,7 +106,7 @@ df_cleaned <- df_ocha_raw %>%
       "intersectoral",
       gsub("^pi_n_", "", sector)
     ),
-    pin = replace_na(pin, 0),
+    pin = round(replace_na(pin, 0)),
     source = "ocha",
     sector_general = ifelse(
       sector == "intersectoral",
@@ -77,13 +121,33 @@ df_cleaned <- df_ocha_raw %>%
     affected_population =
       ifelse(affected_population < pin,
         max(pin),
-        affected_population
+        round(affected_population)
       ),
     affected_population = max(affected_population)
   ) %>%
   ungroup()
 
+df_tcd_sev <- df_sev %>%
+  left_join(
+    df_cleaned %>%
+      filter(sector == "intersectoral") %>%
+      select(-sector)
+  ) %>%
+  mutate(
+    severity = round(severity)
+  )
+
 write_csv(
   df_cleaned,
   file_paths$save_path
+)
+
+write_csv(
+  df_tcd_sev,
+  file_paths$save_path_sev
+)
+
+write_csv(
+  df_ind_sev,
+  file_paths$save_path_indicator_sev
 )

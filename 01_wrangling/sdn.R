@@ -202,3 +202,8 @@ write_csv(
   df_sdn,
   file_paths$save_path
 )
+
+write_csv(
+  df_sdn,
+  file_paths$save_path_sev
+)

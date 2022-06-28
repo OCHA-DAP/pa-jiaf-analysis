@@ -210,7 +210,7 @@ df_ocha_pin <- read_csv(
 
 df_hno_pin <- df_ocha_pin %>%
   filter(
-    sector_group == "intersectoral"
+    sector_general == "intersectoral"
   ) %>%
   group_by(
     adm0_name
@@ -225,7 +225,7 @@ df_hno_pin <- df_ocha_pin %>%
 
 df_cluster_pin <- df_ocha_pin %>%
   filter(
-    sector_group == "sectoral"
+    sector_general == "sectoral"
   ) %>%
   group_by(
     adm0_name,

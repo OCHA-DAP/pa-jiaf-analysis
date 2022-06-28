@@ -68,7 +68,7 @@ df_max_min <-
     df_max,
     df_min
   ) %>%
-  filter(!is.na(second_max_pin))
+  filter(!is.na(second_max_pin) & max_pin > 0)
 
 df_small_clusters <- df %>%
   select(
@@ -477,7 +477,7 @@ df_diff_max_min %>%
   theme(
     plot.title = element_text(
       face = "bold",
-      size = 22,
+      size = 18,
       colour = "#134373",
       margin = margin(10, 10, 30, 10, "pt"),
       hjust = 0.5
@@ -652,7 +652,7 @@ df_max_sector_freq %>%
   theme(
     plot.title = element_text(
       face = "bold",
-      size = 22,
+      size = 18,
       margin = margin(10, 10, 10, 10, "pt"),
       family = "Roboto"
     ),
@@ -711,7 +711,7 @@ df_max_frequency <- df %>%
     pop_group
   ) %>%
   mutate(
-    max_pin = pin == max(pin)
+    max_pin = pin == max(pin) & pin != 0
   ) %>%
   group_by(
     adm0_pcode,
@@ -788,8 +788,8 @@ ggsave(
     "Option 1",
     "2022_freq_sector_max.png"
   ),
-  height = 8,
-  width = 12
+  height = 12,
+  width = 15
 )
 
 write_csv(

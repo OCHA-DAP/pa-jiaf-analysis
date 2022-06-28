@@ -35,8 +35,8 @@ df_ocha_raw <- read_excel(ocha_fp,
     pin = pin_expert
   )
 
-# reading a sheet to extract pcodes
-df_ocha_pcodes <- read_excel(ocha_fp,
+df_ocha_pcodes <- read_excel(
+  ocha_fp,
   sheet = "Pop_SPref2022HorsRef"
 ) %>%
   filter(row_number() < 80) %>%
@@ -158,7 +158,7 @@ df_prot <- read_excel(
 df_health <- read_excel(
   file.path(
     file_paths$ocha_dir,
-    "CAR_HNO_2022_Sant<U+00E9>_VF.xlsx"
+    stringi::stri_unescape_unicode("CAR_HNO_2022_Sant\u00e9_VF.xlsx")
   ),
   sheet = "2-PIN2021Subpref",
   range = "CT5:DG234"

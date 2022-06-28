@@ -34,6 +34,39 @@ df_indicators <- read_excel(
 ) %>%
   clean_names()
 
+df_sev <- read_excel(
+  ocha_fp,
+  sheet = "Step 5-Severity",
+  skip = 1
+) %>%
+  clean_names() %>%
+  pivot_longer(
+    c(
+      mean_of_max_50_percent_severity,
+      severity_corrected_for_critical_max_rounded:wash_severity
+    ),
+    names_to = "sector",
+    values_to = "severity"
+  ) %>%
+  mutate(
+    sector_temp = case_when(
+      sector == "severity_corrected_for_critical_max_rounded" ~ "intersectoral",
+      sector == "mean_of_max_50_percent_severity" ~ "intersectoral_unadjusted",
+      TRUE ~ gsub("_severity", "", sector)
+    ),
+    sector = ifelse(
+      sector_temp == "intersectoral_unadjusted",
+      "intersectoral",
+      sector_temp
+    )
+  ) %>%
+  select(
+    adm2_pcode,
+    sector,
+    sector_temp,
+    severity
+  )
+
 ########################
 #### DATA WRANGLING ####
 ########################
@@ -191,6 +224,34 @@ df_ssd <- df_organized %>%
     sex != "total"
   )
 
+temp <- df_ssd %>%
+  group_by(
+    adm0_name,
+    adm0_pcode,
+    adm1_name,
+    adm1_pcode,
+    adm2_name,
+    adm2_pcode,
+    sector
+  ) %>%
+  summarize(
+    pin = sum(pin),
+    .groups = "drop"
+  )
+
+df_ssd_sev <- temp %>%
+  left_join(df_sev) %>%
+  filter(severity > 0) %>%
+  mutate(
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    ),
+    sector = sector_temp
+  ) %>%
+  select(-sector_temp)
+
 df_ssd_indicator <- df_indicators %>%
   left_join(
     df_ssd %>%
@@ -218,6 +279,16 @@ write_csv(
 )
 
 write_csv(
+  df_ssd_sev,
+  file_paths$save_path_sev
+)
+
+write_csv(
   df_ssd_indicator,
   file_paths$save_path_indicator
+)
+
+write_csv(
+  df_ssd_indicator %>% filter(severity > 0),
+  file_paths$save_path_indicator_sev
 )

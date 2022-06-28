@@ -298,7 +298,6 @@ temp <- df_msna_anlyse %>%
     .groups = "drop"
   )
 
-
 write_csv(
   temp,
   file.path(
@@ -309,7 +308,6 @@ write_csv(
     "2022_max_pin_adj_by_msna.csv"
   )
 )
-
 
 temp %>%
   pivot_longer(
@@ -623,7 +621,7 @@ temp %>%
     stat = "identity",
     fill = "#1EBFB3"
   ) +
-  facet_grid(cols = vars(adm0_pcode)) +
+  facet_grid(~adm0_pcode) +
   coord_flip() +
   theme_minimal() +
   geom_text(
@@ -632,7 +630,7 @@ temp %>%
     size = 4
   ) +
   scale_y_continuous(
-    limits = c(0, 100),
+    limits = c(0, 80),
     labels = function(x) {
       paste0(x, "%")
     }
@@ -688,7 +686,7 @@ ggsave(
     "2022_msna_misalignments.png"
   ),
   height = 8,
-  width = 15
+  width = 13
 )
 
 ##############################
@@ -735,7 +733,7 @@ temp %>%
   theme(
     plot.title = element_text(
       face = "bold",
-      size = 22,
+      size = 18,
       margin = margin(10, 10, 10, 10, "pt"),
       hjust = 0.5,
       family = "Roboto"

@@ -79,6 +79,30 @@ df_population <- read_excel(
   ) %>%
   separate(sex_age, c("sex", "age"), sep = "_", extra = "merge")
 
+# severity datasets
+df_cluster_sev <- df_ocha_clusters_raw %>%
+  clean_names() %>%
+  transmute(
+    adm3_name = balad_adm3,
+    adm3_pcode,
+    sector,
+    population_group,
+    pin = pi_n,
+    severity
+  )
+
+df_is_sev <- read_excel(
+  ocha_fp,
+  sheet = "Severity"
+) %>%
+  clean_names() %>%
+  transmute(
+    adm3_name = adm3_baladiya,
+    sector = "intersectoral",
+    population_group = "Non-displaced", # temporarly for matching
+    severity
+  )
+
 ########################
 #### DATA WRANGLING ####
 ########################
@@ -231,7 +255,60 @@ df_lby <- df_organized %>%
       ifelse(affected_population < pin, max(pin), affected_population),
     affected_population = max(affected_population)
   ) %>%
-  ungroup()
+  ungroup() %>%
+  select(-severity)
+
+temp <- df_lby %>%
+  group_by(adm3_name, adm3_pcode) %>%
+  summarize(
+    pin = sum(pin),
+    affected_population = sum(affected_population)
+  )
+
+df_is_sev <- df_is_sev %>%
+  left_join(temp)
+
+temp <- df_lby %>%
+  group_by(
+    adm3_name,
+    adm3_pcode,
+    population_group
+  ) %>%
+  summarize(
+    affected_population = sum(affected_population),
+    .groups = "drop"
+  )
+
+df_lby_sev <- df_cluster_sev %>%
+  left_join(temp) %>%
+  bind_rows(df_is_sev)
+
+temp <- df_lby %>%
+  select(
+    adm0_pcode,
+    adm0_name,
+    adm1_name,
+    adm1_pcode,
+    adm2_name,
+    adm2_pcode,
+    adm3_pcode
+  ) %>%
+  unique()
+
+df_lby_sev <- df_lby_sev %>%
+  left_join(temp) %>%
+  mutate(
+    source = "ocha",
+    sector_general = ifelse(sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    ),
+    population_group = ifelse(sector == "intersectoral",
+      "overall",
+      population_group
+    )
+  ) %>%
+  filter(severity > 0)
 
 df_lby_indicator <- df_indicators %>%
   separate(
@@ -280,6 +357,16 @@ write_csv(
 )
 
 write_csv(
+  df_lby_sev,
+  file_paths$save_path_sev
+)
+
+write_csv(
   df_lby_indicator,
   file_paths$save_path_indicator
+)
+
+write_csv(
+  df_lby_indicator %>% filter(severity > 0),
+  file_paths$save_path_indicator_sev
 )

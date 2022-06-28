@@ -107,11 +107,7 @@ df_organized <- df_ocha %>%
     pin = round(pin),
     # 4 cases of pin higher than population figures
     pin = ifelse(pin > affected_population, affected_population, pin),
-    severity = ifelse(
-      pin == 0 | severity == 0 | is.na(severity),
-      1,
-      severity
-    ),
+    severity,
     source = "ocha",
     sector_general = ifelse(
       sector == "itc",
@@ -140,4 +136,9 @@ df_irq <- df_organized %>%
 write_csv(
   df_irq,
   file_paths$save_path
+)
+
+write_csv(
+  df_irq,
+  file_paths$save_path_sev
 )
