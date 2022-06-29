@@ -92,6 +92,11 @@ df_sev <- read_excel(
     adm2_name = adm2_county,
     adm2_pcode,
     sector,
+    sector_general = ifelse(
+      sector == "intersectoral",
+      "intersectoral",
+      "sectoral"
+    ),
     severity
   )
 

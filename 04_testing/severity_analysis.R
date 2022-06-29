@@ -1,5 +1,6 @@
 library(tidyverse)
 library(tidytext)
+library(ggcorrplot)
 
 source(here::here("99_helpers", "helpers.R"))
 
@@ -962,5 +963,398 @@ write_csv(
     "graphs",
     "datasets",
     "2022_hno_compr_adjustment_pop.csv"
+  )
+)
+
+###################################################
+#### RELATIONSHIP SECTORAL SUM & INTERSECTORAL ####
+###################################################
+
+df_sum_sev <- df %>%
+  filter(
+    sector == "Intersectoral" | sector_general == "sectoral",
+    !(adm0_pcode %in% c("NGA", "BDI", "TCD", "BFA", "MLI")), # no sector data,
+    !(adm0_pcode %in% c("LBY", "VEN")), # insufficient intersector data
+  ) %>%
+  group_by(
+    adm0_pcode,
+    disaggregation,
+    sector_general
+  ) %>%
+  summarize(
+    severity = sum(severity, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_wider(
+    names_from = sector_general,
+    values_from = severity
+  ) %>%
+  filter(
+    intersectoral > 0
+  )
+
+df_sum_sev %>%
+  ggplot(
+    aes(
+      x = intersectoral,
+      y = sectoral,
+      group = intersectoral
+    )
+  ) +
+  geom_boxplot(
+    color = "#1EBFB3"
+  ) +
+  facet_wrap(
+    ~adm0_pcode,
+    scales = "free_y"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto",
+      hjust = .5
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    axis.title.y = element_text(
+      face = "bold",
+      size = 12,
+      family = "Roboto",
+      margin = margin(r = 20)
+    ),
+    axis.title.x = element_text(
+      face = "bold",
+      size = 12,
+      family = "Roboto",
+      margin = margin(t = 20)
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.key.width = unit(1, "cm"),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  ) +
+  labs(
+    x = "Intersectoral severity",
+    y = "Sum of sectoral severity",
+    title = "Intersectoral severity relative to sectoral severity"
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir_sev,
+    "graphs",
+    "2022_hno_compr_sum_sector_inter.png"
+  ),
+  width = 10,
+  height = 6,
+  units = "in"
+)
+
+write_csv(
+  df_sum_sev,
+  file.path(
+    file_paths$output_dir_sev,
+    "graphs",
+    "datasets",
+    "2022_hno_compr_sum_sector_inter.csv"
+  )
+)
+
+##############################################
+#### SECTORAL TO INTERSECTORAL COMPARISON ####
+##############################################
+
+df_sect_is_comp <- df %>%
+  filter(
+    sector_general != "intersectoral",
+    !(adm0_pcode %in% c("NGA", "BDI", "TCD", "BFA", "MLI")), # no sector data
+    !(adm0_pcode %in% c("LBY", "VEN")), # insufficient intersector data
+    !is.na(severity),
+    severity > 0
+  ) %>%
+  left_join(
+    df %>%
+      filter(
+        sector == "Intersectoral"
+      ) %>%
+      select(
+        disaggregation,
+        intersectoral = severity
+      ),
+    by = "disaggregation"
+  ) %>%
+  group_by(
+    sector,
+    severity,
+    intersectoral
+  ) %>%
+  summarize(
+    n = n(),
+    .groups = "drop"
+  ) %>%
+  group_by(
+    sector
+  ) %>%
+  mutate(
+    perc = n / sum(n)
+  ) %>%
+  complete(
+    sector,
+    severity = 1:5,
+    intersectoral = 1:5
+  )
+
+df_sect_is_comp %>%
+  mutate(
+    perc_lab = ifelse(
+      perc > 0,
+      paste0(round(100 * perc), "%"),
+      ""
+    )
+  ) %>%
+  ggplot(
+    aes(
+      x = intersectoral,
+      y = severity
+    )
+  ) +
+  geom_tile(
+    aes(
+      fill = perc
+    ),
+    color = "#888888"
+  ) +
+  geom_text(
+    aes(
+      label = perc_lab
+    ),
+    family = "Roboto"
+  ) +
+  geom_segment(
+    data = data.frame(
+      x = c(1:4 + 0.5, 1:4 + 0.5),
+      xend = c(2:5 + 0.5, 1:4 + 0.5),
+      y = c(1:4 + 0.5, 0:3 + 0.5),
+      yend = c(1:4 + 0.5, 1:4 + 0.5)
+    ),
+    aes(
+      x = x,
+      xend = xend,
+      y = y,
+      yend = yend
+    ),
+    color = "#18998F"
+  ) +
+  geom_segment(
+    data = data.frame(
+      x = c(0:3 + 0.5, 1:4 + 0.5),
+      xend = c(1:4 + 0.5, 1:4 + 0.5),
+      y = c(1:4 + 0.5, 1:4 + 0.5),
+      yend = c(1:4 + 0.5, 2:5 + 0.5)
+    ),
+    aes(
+      x = x,
+      xend = xend,
+      y = y,
+      yend = yend
+    ),
+    color = "#007CE0"
+  ) +
+  geom_text(
+    data = data.frame(
+      sector = "Protection (HLP)",
+      severity = c(4.5, 2),
+      intersectoral = c(2, 4.5),
+      label = c(
+        "Sectoral severity higher\nthan intersectoral",
+        "Sectoral severity\nlower than\nintersectoral"
+      )
+    ),
+    aes(
+      label = label
+    ),
+    family = "Roboto",
+    size = 2.5
+  ) +
+  facet_wrap(
+    ~sector
+  ) +
+  scale_fill_gradient(
+    low = "white",
+    high = "#1EBFB3",
+    na.value = "white",
+    labels = scales::percent_format(1)
+  ) +
+  labs(
+    y = "Sectoral severity",
+    title = "Comparison of sectoral and intersectoral severity",
+    x = "Intersectoral severity",
+    fill = "% of areas"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto",
+      hjust = .5
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    axis.title.y = element_text(
+      face = "bold",
+      size = 12,
+      family = "Roboto",
+      margin = margin(r = 20)
+    ),
+    axis.title.x = element_text(
+      face = "bold",
+      size = 12,
+      family = "Roboto",
+      margin = margin(t = 20)
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.key.width = unit(1, "cm"),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir_sev,
+    "graphs",
+    "2022_hno_compr_sector_is_tiles.png"
+  ),
+  width = 10,
+  height = 8,
+  units = "in"
+)
+
+write_csv(
+  df_sect_is_comp,
+  file.path(
+    file_paths$output_dir_sev,
+    "graphs",
+    "datasets",
+    "2022_hno_compr_sector_is_tiles.csv"
+  )
+)
+
+##################################
+#### CORRELATIONS BETWEEN ALL ####
+##################################
+
+df_corr <- df %>%
+  select(
+    adm0_name,
+    disaggregation,
+    sector,
+    severity
+  ) %>%
+  filter(
+    sector != "Intersectoral (raw)"
+  ) %>%
+  pivot_wider(
+    names_from = sector,
+    values_from = severity
+  ) %>%
+  select(
+    Intersectoral:`Protection (CP)`
+  ) %>%
+  as.matrix()
+
+cor(
+  df_corr,
+  use = "pairwise.complete.obs"
+) %>%
+  ggcorrplot(
+    type = "lower",
+    lab = TRUE,
+    lab_size = 2,
+    colors = c("#F2645A", "white", "#1EBFB3"),
+    title = "Severity correlations, sectoral and intersectoral"
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 16,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto",
+      hjust = 1
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 8,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir_sev,
+    "graphs",
+    "2022_hno_severity_corr.png"
+  ),
+  width = 10,
+  height = 8,
+  units = "in"
+)
+
+write_csv(
+  df_sect_is_comp,
+  file.path(
+    file_paths$output_dir_sev,
+    "graphs",
+    "datasets",
+    "2022_hno_compr_sector_is_tiles.csv"
   )
 )
