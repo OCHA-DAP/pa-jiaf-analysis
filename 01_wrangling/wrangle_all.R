@@ -147,7 +147,7 @@ generalize_sector <- function(df) {
         "intersectoral",
         "itc"
       ) ~ "Intersectoral",
-      sector == "intersectoral_unadjusted" ~ "JIAF 1.1"
+      sector == "intersectoral_unadjusted" ~ "Intersectoral (raw)"
     )
   )
 }
