@@ -982,7 +982,7 @@ df_sum_sev <- df %>%
     sector_general
   ) %>%
   summarize(
-    severity = sum(severity, na.rm = TRUE),
+    severity = mean(severity, na.rm = TRUE),
     .groups = "drop"
   ) %>%
   pivot_wider(
@@ -1053,7 +1053,7 @@ df_sum_sev %>%
   ) +
   labs(
     x = "Intersectoral severity",
-    y = "Sum of sectoral severity",
+    y = "Mean of sectoral severity",
     title = "Intersectoral severity relative to sectoral severity"
   )
 
@@ -1061,7 +1061,7 @@ ggsave(
   file.path(
     file_paths$output_dir_sev,
     "graphs",
-    "2022_hno_compr_sum_sector_inter.png"
+    "2022_hno_compr_mean_sector_inter.png"
   ),
   width = 10,
   height = 6,
@@ -1074,7 +1074,7 @@ write_csv(
     file_paths$output_dir_sev,
     "graphs",
     "datasets",
-    "2022_hno_compr_sum_sector_inter.csv"
+    "2022_hno_compr_mean_sector_inter.csv"
   )
 )
 
@@ -1293,7 +1293,7 @@ df_corr <- df %>%
     values_from = severity
   ) %>%
   select(
-    Intersectoral:`Protection (CP)`
+    -c(adm0_name, disaggregation)
   ) %>%
   as.matrix()
 
