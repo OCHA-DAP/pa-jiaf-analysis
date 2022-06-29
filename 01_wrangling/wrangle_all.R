@@ -147,7 +147,7 @@ generalize_sector <- function(df) {
         "intersectoral",
         "itc"
       ) ~ "Intersectoral",
-      sector == "intersectoral_unadjusted" ~ "Intersectoral (raw)"
+      sector == "intersectoral_unadjusted" ~ "JIAF 1.1"
     )
   )
 }
@@ -228,7 +228,11 @@ df_sev_data <- map_dfr(
   ) %>%
   generalize_sector()
 
+# cleaning out NA and 0 severities
 df_sev_data %>%
+  filter(
+    !(!is.na(severity) & severity > 0)
+  ) %>%
   write_csv(
     file.path(
       file_paths$agg_dir,
@@ -248,6 +252,9 @@ df_ind_sev_data <- map_dfr(
 )
 
 df_ind_sev_data %>%
+  filter(
+    !is.na(severity) & severity > 0
+  ) %>%
   write_csv(
     file.path(
       file_paths$agg_dir,
