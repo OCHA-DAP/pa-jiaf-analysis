@@ -231,7 +231,7 @@ df_sev_data <- map_dfr(
 # cleaning out NA and 0 severities
 df_sev_data %>%
   filter(
-    !(!is.na(severity) & severity > 0)
+    !is.na(severity) & severity > 0
   ) %>%
   write_csv(
     file.path(
