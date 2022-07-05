@@ -1,17 +1,10 @@
 fetch_random_pin_data <-
   function(admin_level = 2,
            gender_age_disagg = FALSE,
-           pop_group_disagg = FALSE,
-           protection_subcluster = FALSE) {
-    n_admin <- case_when(
-      gender_age_disagg & pop_group_disagg ~ 20,
-      gender_age_disagg ~ 30,
-      pop_group_disagg ~ 40,
-      TRUE ~ 70
-    )
+           pop_group_disagg = FALSE) {
 
     # read sectoral PiN
-    df_sectors <- read_csv(
+    df <- read_csv(
       file.path(
         file_paths$output_dir,
         "datasets",
@@ -26,16 +19,75 @@ fetch_random_pin_data <-
           TRUE ~ tolower(adm1_name)
         ),
         adm_name = gsub("[ ]|[-]|[.]|[_]|[,]", "", adm_name),
-        adm = case_when(
+        adm_pcode = case_when(
           admin_level < 2 ~ adm1_pcode,
           admin_level > 2 ~ adm3_pcode,
           TRUE ~ adm2_pcode
         ),
-        sector = ifelse(
-          !protection_subcluster & grepl("^Protection", sector),
-          "Protection",
-          sector
+        age = case_when(
+          is.na(age) ~ NA_character_,
+          age %in% c("< 18 ans", "child", "below_18", "children") ~ "Children",
+          TRUE ~ "Adult",
+        ),
+        sex = case_when(
+          is.na(sex) ~ NA_character_,
+          sex %in% c("female", "Femme", "f") ~ "Female",
+          sex %in% c("male", "Homme", "m") ~ "Male"
+        ),
+        population_group = case_when(
+          population_group %in% c(
+            "idp",
+            "idps",
+            "IDPs",
+            "In-Camp-IDPs",
+            "Out-of-Camp-IDPs",
+            "displaced",
+            "pdi",
+            "PDI"
+          ) ~ "IDPs",
+          population_group %in% c(
+            "APV",
+            "Autres populations",
+            "vulnerable_people",
+            "vul",
+            "other"
+          ) ~ "Other-vulnerable-people",
+          population_group == "shock_affected" ~ "Shock-affected",
+          population_group %in% c(
+            "refugees",
+            "ref_car",
+            "ref_nga",
+            "ref_other",
+            "ref",
+            "Refugees"
+          ) ~ "Refugees",
+          population_group %in% c(
+            "host",
+            "Non-displaced",
+            "non_displaced",
+            "non_pdi",
+            "residents",
+            "Residents"
+          ) ~ "Residents",
+          population_group %in% c(
+            "ret",
+            "Retournes",
+            "return",
+            "Rapatries",
+            "returnees",
+            "Returnees"
+          ) ~ "Returnees"
         )
+      ) %>%
+      arrange(
+        adm0_pcode,
+        adm1_pcode,
+        adm2_pcode,
+        adm3_pcode,
+        sector,
+        population_group,
+        sex,
+        desc(age)
       )
 
     # read MSNA dataset and prepare it for alignement with sectoral PiN
@@ -68,7 +120,7 @@ fetch_random_pin_data <-
       ) %>%
       filter(
         !is.na(severity),
-        admin0 %in% df_sectors$adm0_pcode
+        admin0 %in% df$adm0_pcode
       ) %>%
       transmute(
         uuid,
@@ -80,7 +132,7 @@ fetch_random_pin_data <-
           !is.na(admin2_hno) ~ admin2_hno,
           !is.na(admin1) ~ admin1
         ),
-        adm_name = df_sectors$adm[match(adm_name, df_sectors$adm_name)],
+        adm_pcode = df$adm_pcode[match(adm_name, df$adm_name)],
         sector = case_when(
           sector == "edu_lsg" ~ "Education",
           sector == "foodsec_lsg" ~ "FS/FSL",
@@ -93,17 +145,10 @@ fetch_random_pin_data <-
         severity,
         weight = as.numeric(weights)
       ) %>%
-      filter(!is.na(adm_name))
+      filter(!is.na(adm_pcode)) %>%
+      select(-adm_name)
 
-    temp <- df_sectors %>%
-      group_by(adm0_pcode) %>%
-      summarize(
-        n = n_distinct(adm),
-        .groups = "drop"
-      ) %>%
-      filter(n >= n_admin)
-
-    country_for_name <- sample(temp$adm0_pcode, 1)
+    df_sectors <- df
 
     if (gender_age_disagg) {
       df_sectors <- df_sectors %>%
@@ -120,23 +165,22 @@ fetch_random_pin_data <-
         disaggregation = case_when(
           gender_age_disagg & pop_group_disagg ~
             paste(
-              adm,
               population_group,
               sex,
               age
             ),
-          pop_group_disagg ~ paste(adm, population_group, "-", "-"),
-          gender_age_disagg ~ paste(adm, sex, age),
-          TRUE ~ adm
+          pop_group_disagg ~ population_group,
+          gender_age_disagg ~ paste(sex, age),
+          TRUE ~ NA_character_
         )
       ) %>%
       filter(
         adm0_pcode %in% unique(df_msna$adm0_pcode),
-        adm %in% df_msna$adm_name
+        adm_pcode %in% df_msna$adm_pcode
       ) %>%
       group_by(
         adm0_pcode,
-        adm,
+        adm_pcode,
         disaggregation,
         sector
       ) %>%
@@ -149,39 +193,23 @@ fetch_random_pin_data <-
       ungroup() %>%
       arrange(
         adm0_pcode,
-        adm,
+        adm_pcode,
         disaggregation,
         sector
-      ) %>%
-      filter(!sector %in% c(
-        "ERL",
-        "Displaced pop.",
-        "CCCM",
-        "Protection (HLP)"
-      ))
-
-    rand_areas <- temp %>%
-      pivot_wider(
-        names_from = sector,
-        values_from = pin
-      ) %>%
-      select(adm) %>%
-      unique() %>%
-      filter(adm %in% sample(adm, size = n_admin))
+      )
 
     df_data <- temp %>%
+      filter(adm0_pcode == sample(unique(temp$adm0_pcode), 1)) %>%
       pivot_wider(
         names_from = sector,
         values_from = pin,
         values_fill = 0
-      ) %>%
-      filter(adm %in% rand_areas$adm)
+      )
 
     if (gender_age_disagg & pop_group_disagg) { # nolint
       df_data <- df_data %>%
         separate(disaggregation,
           into = c(
-            "admin",
             "Population group",
             "Sex",
             "Age"
@@ -192,7 +220,6 @@ fetch_random_pin_data <-
       df_data <- df_data %>%
         separate(disaggregation,
           into = c(
-            "admin",
             "Sex",
             "Age"
           ),
@@ -200,72 +227,129 @@ fetch_random_pin_data <-
         )
     } else if (pop_group_disagg) {
       df_data <- df_data %>%
-        separate(disaggregation,
-          into = c(
-            "admin",
-            "Population group"
-          ),
-          " "
-        )
+        rename(`Population group` = "disaggregation")
+    } else {
+      df_data <- df_data %>%
+        select(-disaggregation)
     }
 
     df_msna <- df_msna %>%
-      filter(adm_name %in% df_data$adm) %>%
-      select(-adm0_pcode)
+      filter(adm_pcode %in% df_data$adm_pcode) %>%
+      select(-adm0_pcode) %>%
+      arrange(
+        adm_pcode,
+        uuid,
+        sector
+      )
 
-    df_area_name <- df_sectors %>%
-      select(
-        adm0_name,
-        adm0_pcode,
-        adm1_name,
-        adm1_pcode,
-        adm2_name,
-        adm2_pcode,
-        adm3_name,
-        adm3_pcode
+    df_area_name <- df %>%
+      filter(
+        !is.na(adm_pcode),
+        adm0_pcode %in% df_data$adm0_pcode
       ) %>%
-      filter(adm0_pcode == country_for_name) %>%
-      unique() %>%
-      janitor::remove_empty(which = "cols") %>%
-      filter(row_number() %in% sample(1:nrow(.), n_admin)) %>% # nolint
-      mutate(adm = df_data$adm)
+      transmute(
+        adm1_pcode = gsub("[A-Z]+", "XY", adm1_pcode),
+        adm2_pcode = gsub("[A-Z]+", "XY", adm2_pcode),
+        adm3_pcode = gsub("[A-Z]+", "XY", adm3_pcode),
+        adm_pcode
+      ) %>%
+      unique()
 
+    if (admin_level == 2) {
+      df_area_name <- df_area_name %>%
+        select(-adm3_pcode)
+    }
 
-    df_data <- left_join(
+    if (admin_level < 2) {
+      df_area_name <- df_area_name %>%
+        select(-adm2_pcode)
+    }
+
+    df_data_output <- left_join(
       df_area_name,
-      df_data %>% select(-adm0_pcode, -disaggregation)
+      df_data
     ) %>%
-      select(-adm)
+      select(-adm_pcode, -adm0_pcode) %>%
+      filter(!is.na(affected_population)) %>%
+      rename(`Affected population` = affected_population) %>%
+      arrange(
+        adm1_pcode
+      ) %>%
+      mutate(
+        ID = row_number(),
+        .before = "adm1_pcode"
+      )
 
-    df_msna <- full_join(df_area_name,
-      df_msna,
-      by = c("adm" = "adm_name")
+    names(df_data_output) <- gsub(
+      "adm",
+      "Admin",
+      names(df_data_output)
+    )
+
+    names(df_data_output) <- gsub(
+      "_pcode",
+      " Pcode",
+      names(df_data_output)
+    )
+
+    df_msna_output <- full_join(
+      df_area_name,
+      df_msna
     ) %>%
-      select(-adm) %>%
-      filter(sector != "ERL") %>%
+      select(-adm_pcode) %>%
+      filter(!is.na(uuid)) %>%
       pivot_wider(
         names_from = sector,
         values_from = severity
       ) %>%
-      rename(hh_id = "uuid")
+      rename(hh_id = "uuid") %>%
+      mutate(
+        across(
+          .cols = -c(matches("adm"), hh_id, weight),
+          ~ case_when(
+            . >= 3 ~ "in need",
+            . < 3 ~ "not in need",
+            is.na(.) ~ "not applicable"
+          )
+        )
+      )
+
+    names(df_msna_output) <- gsub(
+      "adm",
+      "Admin",
+      names(df_msna_output)
+    )
+
+    names(df_msna_output) <- gsub(
+      "_pcode",
+      " Pcode",
+      names(df_msna_output)
+    )
 
     write_csv(
-      df_data,
+      df_data_output,
       file.path(
         file_paths$output_dir,
         "datasets",
-        "synthetic_data",
-        paste0("2022_", tolower(df_data$adm0_name[1]), "_sectoral_pin.csv")
+        "simulation_data",
+        "2022_simulation_sectoral_pin.csv"
       )
     )
 
     write_csv(
-      df_msna,
+      df_msna_output,
       file.path(
         file_paths$output_dir,
         "datasets",
-        "synthetic_data",
-        paste0("2022_", tolower(df_msna$adm0_name[1]), "_msna_data.csv")
+        "simulation_data",
+        "2022_simulation_msna.csv"
       )
     )
   }
+
+library(tidyverse)
+source("99_helpers/helpers.R")
+
+file_paths <- get_paths_analysis()
+
+fetch_random_pin_data(pop_group_disagg = TRUE)
