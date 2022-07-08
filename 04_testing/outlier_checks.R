@@ -1325,3 +1325,221 @@ ggsave(
   height = 4,
   width = 8
 )
+
+###########################################
+#### % DIFF BETWEEN MAX AND SECOND MAX ####
+###########################################
+
+df_diff_max_min <- df_max_min %>%
+  mutate(
+    perc_diff_max = (max_pin - second_max_pin) / affected_population
+  ) %>%
+  group_by(
+    adm0_pcode
+  ) %>%
+  mutate(
+    mean_diff_max = mean(perc_diff_max),
+    std_diff_max = sd(perc_diff_max)
+  ) %>%
+  mutate(
+    is_outlier =
+      ifelse(perc_diff_max > mean_diff_max + (2 * std_diff_max), 1, 0)
+  ) %>%
+  group_by(
+    adm0_pcode
+  ) %>%
+  summarize(
+    perc_outlier = sum(is_outlier, na.rm = TRUE) / n()
+  )
+
+df_diff_max_min %>%
+  ggplot(
+    aes(
+      x = reorder(adm0_pcode, +perc_outlier),
+      y = perc_outlier,
+      fill = ""
+    )
+  ) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  scale_y_continuous(
+    labels = scales::percent_format()
+  ) +
+  labs(
+    title = paste(
+      "% diff between highest and second highest PiN",
+      "being an outlier within each country"
+    ),
+    y = "% of lowest unit of analysis with outliers",
+    x = "",
+    caption = paste0(
+      "Lowest unit of analysis is the most disaggregated PiN available, ",
+      "such as PiN per population group at the admin 2 level."
+    ),
+    fill = ""
+  ) +
+  scale_fill_manual(
+    values = "#1EBFB3"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 18,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "none",
+    panel.grid.minor = element_blank()
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "2022_perc_diff_max_2nd_max.png"
+  ),
+  height = 10,
+  width = 11
+)
+
+write_csv(
+  df_diff_max_min,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_perc_diff_max_2nd_max.csv"
+  )
+)
+
+##############################
+#### OUTLIERS AT ADMIN 1 ####
+############################
+
+df_outlier_adm1 <- df %>%
+  mutate(
+    perc_pin = pin / affected_population
+  ) %>%
+  group_by(
+    adm0_pcode,
+    adm1_pcode
+  ) %>%
+  mutate(
+    mean_pin = mean(perc_pin),
+    std_pin = sd(perc_pin),
+  ) %>%
+  mutate(
+    is_upper_outlier =
+      ifelse(perc_pin > mean_pin + (2 * std_pin), 1, 0),
+    is_lower_outlier =
+      ifelse(perc_pin < mean_pin - (2 * std_pin), 1, 0)
+  ) %>%
+  group_by(
+    adm0_pcode
+  ) %>%
+  summarize(
+    `upper outlier` = sum(is_upper_outlier, na.rm = TRUE) / n(),
+    `lower outlier` = sum(is_lower_outlier, na.rm = TRUE) / n()
+  ) %>%
+  pivot_longer(
+    cols = matches("(upper|lower) outlier"),
+    names_to = "type",
+    values_to = "value"
+  ) %>%
+  filter(value > 0)
+
+df_outlier_adm1 %>%
+  ggplot(
+    aes(
+      x = reorder(adm0_pcode, +value),
+      y = value,
+      fill = type
+    )
+  ) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  scale_y_continuous(
+    labels = scales::percent_format()
+  ) +
+  labs(
+    title = paste(
+      "Outliers of lowest unit of disaggregation's sectoral PiN",
+      "from each admin 1 for each country"
+    ),
+    y = "% of lowest unit of analysis with outliers",
+    x = "",
+    caption = paste0(
+      "Lowest unit of analysis is the most disaggregated PiN available, ",
+      "such as PiN per population group at the admin 2 level."
+    ),
+    fill = ""
+  ) +
+  scale_fill_manual(
+    values = c("#007CE0", "#1EBFB3")
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 18,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "2022_outlier_admin1.png"
+  ),
+  height = 10,
+  width = 11
+)
+
+write_csv(
+  df_outlier_adm1,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_outlier_admin1.csv"
+  )
+)

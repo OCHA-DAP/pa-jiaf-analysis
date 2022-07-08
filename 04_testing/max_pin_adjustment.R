@@ -44,7 +44,7 @@ df_sectors <- read_csv(
 
 df_msna <- read_csv(
   file.path(
-    dirname(getwd()),
+    file_paths$agg_dir,
     "MSNA_data.csv"
   )
 ) %>%
