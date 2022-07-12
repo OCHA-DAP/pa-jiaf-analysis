@@ -44,58 +44,16 @@ df_sectors <- read_csv(
 
 df_msna <- read_csv(
   file.path(
-    dirname(getwd()),
-    "MSNA_data.csv"
+    file_paths$agg_dir,
+    "2022_msna_wrangled.csv"
   )
 ) %>%
-  mutate(
-    across(
-      .cols = protection_lsg:livelihoods_lsg,
-      .fns = ~ case_when(
-        . == "4+" ~ 5,
-        is.na(.) ~ NA_real_,
-        TRUE ~ as.numeric(.)
-      )
-    ),
-    across(
-      .cols = matches("admin[1-3]"),
-      .fns = ~ gsub(
-        "[ ]|[-]|[.]|[_]|[,]",
-        "",
-        tolower(stringi::stri_trans_general(.x, "latin-ascii"))
-      )
-    )
-  ) %>%
-  pivot_longer(
-    cols = ends_with("_lsg"),
-    names_to = "sector",
-    values_to = "severity"
-  ) %>%
   filter(
     !is.na(severity),
-    admin0 %in% df_sectors$adm0_pcode
+    adm0_pcode %in% df_sectors$adm0_pcode
   ) %>%
-  transmute(
-    uuid,
-    adm0_pcode = admin0,
-    adm_name = case_when(
-      adm0_pcode == "COL" ~ admin1,
-      !is.na(admin3_hno) ~ admin3_hno,
-      admin2_hno == "baidoa" ~ "baydhaba",
-      !is.na(admin2_hno) ~ admin2_hno,
-      !is.na(admin1) ~ admin1
-    ),
-    sector = case_when(
-      sector == "edu_lsg" ~ "Education",
-      sector == "foodsec_lsg" ~ "FS/FSL",
-      sector == "health_lsg" ~ "Health",
-      sector == "markets_er_liv_lsg" ~ "ERL",
-      sector == "protection_lsg" ~ "Protection",
-      sector == "shelter_lsg" ~ "Shelter",
-      sector == "wash_lsg" ~ "WASH"
-    ),
-    inneed = ifelse(severity >= 3, 1, 0),
-    weight = as.numeric(weights)
+  mutate(
+    inneed = ifelse(severity >= 3, 1, 0)
   )
 
 ########################

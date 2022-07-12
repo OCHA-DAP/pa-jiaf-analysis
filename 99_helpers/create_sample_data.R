@@ -1,7 +1,13 @@
+library(tidyverse)
+source("99_helpers/helpers.R")
+
+file_paths <- get_paths_analysis()
+
 fetch_random_pin_data <-
   function(admin_level = 2,
            gender_age_disagg = FALSE,
-           pop_group_disagg = FALSE) {
+           pop_group_disagg = FALSE,
+           seed = 100) {
 
     # read sectoral PiN
     df <- read_csv(
@@ -92,60 +98,16 @@ fetch_random_pin_data <-
 
     # read MSNA dataset and prepare it for alignement with sectoral PiN
     df_msna <- read_csv(file.path(
-      dirname(getwd()),
-      "MSNA_data.csv"
+      file_paths$agg_dir,
+      "2022_msna_wrangled.csv"
     )) %>%
       mutate(
-        across(
-          .cols = protection_lsg:livelihoods_lsg,
-          .fns = ~ case_when(
-            . == "4+" ~ 5,
-            is.na(.) ~ NA_real_,
-            TRUE ~ as.numeric(.)
-          )
-        ),
-        across(
-          .cols = matches("admin[1-3]"),
-          .fns = ~ gsub(
-            "[ ]|[-]|[.]|[_]|[,]",
-            "",
-            tolower(stringi::stri_trans_general(.x, "latin-ascii"))
-          )
-        )
-      ) %>%
-      pivot_longer(
-        cols = ends_with("_lsg"),
-        names_to = "sector",
-        values_to = "severity"
+        adm_pcode = df$adm_pcode[match(adm_name, df$adm_name)]
       ) %>%
       filter(
-        !is.na(severity),
-        admin0 %in% df$adm0_pcode
+        !is.na(adm_pcode),
+        !is.na(severity)
       ) %>%
-      transmute(
-        uuid,
-        adm0_pcode = admin0,
-        adm_name = case_when(
-          adm0_pcode == "COL" ~ admin1,
-          !is.na(admin3_hno) ~ admin3_hno,
-          admin2_hno == "baidoa" ~ "baydhaba",
-          !is.na(admin2_hno) ~ admin2_hno,
-          !is.na(admin1) ~ admin1
-        ),
-        adm_pcode = df$adm_pcode[match(adm_name, df$adm_name)],
-        sector = case_when(
-          sector == "edu_lsg" ~ "Education",
-          sector == "foodsec_lsg" ~ "FS/FSL",
-          sector == "health_lsg" ~ "Health",
-          sector == "markets_er_liv_lsg" ~ "ERL",
-          sector == "protection_lsg" ~ "Protection",
-          sector == "shelter_lsg" ~ "Shelter",
-          sector == "wash_lsg" ~ "WASH"
-        ),
-        severity,
-        weight = as.numeric(weights)
-      ) %>%
-      filter(!is.na(adm_pcode)) %>%
       select(-adm_name)
 
     df_sectors <- df
@@ -198,6 +160,7 @@ fetch_random_pin_data <-
         sector
       )
 
+    set.seed(seed)
     df_data <- temp %>%
       filter(adm0_pcode == sample(unique(temp$adm0_pcode), 1)) %>%
       pivot_wider(
@@ -248,21 +211,24 @@ fetch_random_pin_data <-
         adm0_pcode %in% df_data$adm0_pcode
       ) %>%
       transmute(
-        adm1_pcode = gsub("[A-Z]+", "XY", adm1_pcode),
-        adm2_pcode = gsub("[A-Z]+", "XY", adm2_pcode),
-        adm3_pcode = gsub("[A-Z]+", "XY", adm3_pcode),
+        across(
+          matches("adm[1-3]_pcode"),
+          ~ gsub("[A-Z]+", "XY", .)
+        ),
         adm_pcode
       ) %>%
       unique()
 
     if (admin_level == 2) {
       df_area_name <- df_area_name %>%
-        select(-adm3_pcode)
+        select(-adm3_pcode) %>%
+        unique()
     }
 
     if (admin_level < 2) {
       df_area_name <- df_area_name %>%
-        select(-adm2_pcode)
+        select(-adm2_pcode) %>%
+        unique()
     }
 
     df_data_output <- left_join(
@@ -292,26 +258,29 @@ fetch_random_pin_data <-
       names(df_data_output)
     )
 
-    df_msna_output <- full_join(
+    df_msna_output <- right_join(
       df_area_name,
       df_msna
     ) %>%
-      select(-adm_pcode) %>%
       filter(!is.na(uuid)) %>%
       pivot_wider(
         names_from = sector,
         values_from = severity
       ) %>%
-      rename(hh_id = "uuid") %>%
+      select(-c(uuid, adm_pcode)) %>%
       mutate(
         across(
-          .cols = -c(matches("adm"), hh_id, weight),
+          .cols = -c(matches("adm"), weight),
           ~ case_when(
             . >= 3 ~ "in need",
             . < 3 ~ "not in need",
             is.na(.) ~ "not applicable"
           )
         )
+      ) %>%
+      mutate(
+        hh_id = row_number(),
+        .before = "adm1_pcode"
       )
 
     names(df_msna_output) <- gsub(
@@ -326,13 +295,23 @@ fetch_random_pin_data <-
       names(df_msna_output)
     )
 
+    output_name <- paste0(
+      "2022_simu_adm", admin_level, "_",
+      case_when(
+        pop_group_disagg & gender_age_disagg ~ "pop_sex_age",
+        pop_group_disagg ~ "pop",
+        gender_age_disagg ~ "sex_age",
+        TRUE ~ ""
+      )
+    )
+
     write_csv(
       df_data_output,
       file.path(
         file_paths$output_dir,
         "datasets",
         "simulation_data",
-        "2022_simulation_sectoral_pin.csv"
+        paste0(output_name, "_sectoral_pin.csv")
       )
     )
 
@@ -342,14 +321,44 @@ fetch_random_pin_data <-
         file_paths$output_dir,
         "datasets",
         "simulation_data",
-        "2022_simulation_msna.csv"
+        paste0(output_name, "_msna.csv")
       )
     )
   }
 
-library(tidyverse)
-source("99_helpers/helpers.R")
+# getting raw PiN from countries of choice with sectors as columns
+get_country_pin <- function(country_pcode) {
 
-file_paths <- get_paths_analysis()
+  # load data with only aggregate columns + sector + pin
+  df <- read_csv(
+    file.path(
+      file_paths$output_dir,
+      "datasets",
+      "2022_hno_pin_cluster_totals.csv"
+    )
+  ) %>%
+    select(-c(unadjusted_severity, sector_general, severity))
+
+  df_sub <- df %>%
+    filter(adm0_pcode == country_pcode) %>%
+    remove_constant() %>%
+    remove_empty("cols") %>%
+    select(matches("adm"), everything()) %>%
+    pivot_wider(
+      names_from = sector,
+      values_from = pin
+    )
+
+  write_csv(
+    df_sub,
+    file.path(
+      file_paths$output_dir,
+      "datasets",
+      "simulation_data",
+      paste0("2022_", tolower(country_pcode), ".csv")
+    )
+  )
+}
 
 fetch_random_pin_data(pop_group_disagg = TRUE)
+get_country_pin(country_pcode = "IRQ")
