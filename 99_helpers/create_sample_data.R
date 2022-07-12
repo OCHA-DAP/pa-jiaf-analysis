@@ -1,4 +1,5 @@
 library(tidyverse)
+library(janitor)
 source("99_helpers/helpers.R")
 
 file_paths <- get_paths_analysis()
@@ -360,5 +361,43 @@ get_country_pin <- function(country_pcode) {
   )
 }
 
+# getting severity from countries of choice with sectors as columns
+get_country_severity <- function(country_pcode) {
+
+  # load data with only aggregate columns + sector + pin
+  df <- read_csv(
+    file.path(
+      file_paths$agg_dir,
+      "2022_sectoral_sev.csv"
+    )
+  ) %>%
+    filter(sector_general != "intersectoral" & !is.na(pin) & !is.na(severity))
+
+  df_sub <- df %>%
+    filter(adm0_pcode == country_pcode) %>%
+    remove_constant() %>%
+    remove_empty("cols") %>%
+    select(matches("adm"), everything()) %>%
+    rename(
+      Severity = severity,
+      PIN = pin
+    ) %>%
+    pivot_wider(
+      names_from = sector,
+      values_from = c(Severity, PIN)
+    )
+
+  write_csv(
+    df_sub,
+    file.path(
+      file_paths$output_dir_sev,
+      "datasets",
+      "simulation_data",
+      paste0("2022_", tolower(country_pcode), ".csv")
+    )
+  )
+}
+
 fetch_random_pin_data(pop_group_disagg = TRUE)
 get_country_pin(country_pcode = "IRQ")
+get_country_severity(country_pcode = "IRQ")
