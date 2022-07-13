@@ -714,6 +714,9 @@ temp %>%
       size = 16,
       family = "Roboto"
     )
+  ) +
+  geom_smooth(
+    color = "#007CE0"
   )
 
 
@@ -825,6 +828,9 @@ df_msna_anlyse %>%
     hjust = 0,
     fontface = "bold",
     family = "Roboto"
+  ) +
+  geom_smooth(
+    color = "#007CE0"
   )
 
 ggsave(
@@ -836,4 +842,103 @@ ggsave(
   ),
   height = 5,
   width = 9
+)
+
+########################
+#### LOOK AT 5X MAX ####
+########################
+
+
+temp <- df_msna_anlyse %>%
+  mutate(
+    max_times = max_pin / max_2_pin
+  ) %>%
+  select(
+    adm0_pcode:max_2_pin,
+    max_times,
+    perc_2nd_max_disjoint_nomatch
+  )
+
+temp %>%
+  ggplot(
+    aes(
+      x = max_times,
+      y = perc_2nd_max_disjoint_nomatch
+    )
+  ) +
+  geom_point(
+    alpha = 0.3,
+    fill = "#1EBFB3"
+  ) +
+  theme_minimal() +
+  scale_y_continuous(
+    labels = scales::percent_format(1)
+  ) +
+  scale_x_continuous(
+    labels = function(x) paste(x, "x"),
+    breaks = scales::pretty_breaks(),
+    limits = c(1, 5)
+  ) +
+  labs(
+    x = "Max PiN, size relative to 2nd max PiN",
+    y = "% adjustment (2nd max overlap)",
+    title = c(
+      "Relationship between max PiN size to 2nd max PiN and overlap adjustment"
+    ),
+    subtitle = paste0(
+      "Adjusting the non-overlapping needs regardless of the ",
+      "availability of the sector"
+    )
+  ) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 18,
+      margin = margin(10, 10, 10, 10, "pt"),
+      hjust = 0,
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    axis.title.x = element_text(
+      face = "bold",
+      size = 12,
+      margin = margin(20, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  ) +
+  geom_smooth(
+    color = "#007CE0"
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "2022_overlap_and_2nd_max_times.png"
+  ),
+  height = 6,
+  width = 9
+)
+
+write_csv(
+  temp,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_overlap_and_2nd_max_times.csv"
+  )
 )

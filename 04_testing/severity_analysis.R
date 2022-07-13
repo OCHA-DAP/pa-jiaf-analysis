@@ -767,15 +767,18 @@ df_is_compare %>%
   ggplot(
     aes(
       x = `Intersectoral (raw)`,
-      y = Intersectoral,
-      fill = perc
+      y = Intersectoral
     )
   ) +
   geom_tile(
+    aes(
+      fill = perc
+    ),
     color = "#888888"
   ) +
   geom_text(
     aes(
+      fill = perc,
       label = perc_lab
     ),
     family = "Roboto"
@@ -790,9 +793,9 @@ df_is_compare %>%
     labels = scales::percent_format(1)
   ) +
   labs(
-    y = "Intersectoral (raw)",
+    x = "Intersectoral (raw)",
     title = "Comparison of raw and adjusted severity",
-    x = "Intersectoral (adjusted)",
+    y = "Intersectoral (adjusted)",
     fill = "% of areas"
   ) +
   theme_minimal() +
@@ -836,6 +839,50 @@ df_is_compare %>%
     strip.text = element_text(
       size = 16,
       family = "Roboto"
+    )
+  ) +
+  geom_segment(
+    data = data.frame(
+      x = c(1:4 + 0.5, 1:4 + 0.5),
+      xend = c(2:5 + 0.5, 1:4 + 0.5),
+      y = c(1:4 + 0.5, 0:3 + 0.5),
+      yend = c(1:4 + 0.5, 1:4 + 0.5)
+    ),
+    aes(
+      x = x,
+      xend = xend,
+      y = y,
+      yend = yend
+    ),
+    color = "#007CE0"
+  ) +
+  geom_segment(
+    data = data.frame(
+      x = c(0:3 + 0.5, 1:4 + 0.5),
+      xend = c(1:4 + 0.5, 1:4 + 0.5),
+      y = c(1:4 + 0.5, 1:4 + 0.5),
+      yend = c(1:4 + 0.5, 2:5 + 0.5)
+    ),
+    aes(
+      x = x,
+      xend = xend,
+      y = y,
+      yend = yend
+    ),
+    color = "#18998F"
+  ) +
+  geom_text(
+    data = tibble(
+      Intersectoral = c(1.5, 4.5),
+      "Intersectoral (raw)" = c(4.5, 1.5),
+      label = c(
+        "Adjusted\ndownward",
+        "Adjusted\nupward"
+      ),
+      adm0_pcode = "BDI"
+    ),
+    aes(
+      label = label
     )
   )
 
@@ -942,7 +989,7 @@ df_adjust_pop %>%
   labs(
     x = "Severity adjustment",
     y = "PiN (% of affected population)",
-    title = "Relationship of between adjusted severity and PiN %"
+    title = "Relationship between adjusted severity and PiN %"
   )
 
 ggsave(
@@ -965,6 +1012,126 @@ write_csv(
     "2022_hno_compr_adjustment_pop.csv"
   )
 )
+
+#########################################
+#### RELATIONSHIP PIN POP AND ADJUST ####
+#########################################
+
+df_adjust_same_sev <- df_adjust_pop %>%
+  group_by(
+    adm0_pcode,
+    `Intersectoral (raw)`,
+    Intersectoral
+  ) %>%
+  summarize(
+    pin_perc = mean(pin_perc),
+    .groups = "drop_last"
+  ) %>%
+  filter(
+    n() > 1
+  ) %>%
+  mutate(
+    adjustment = factor(
+      case_when(
+        Intersectoral == `Intersectoral (raw)` ~ "none",
+        Intersectoral > `Intersectoral (raw)` ~ "increase",
+        TRUE ~ "decrease"
+      ),
+      levels = c("decrease", "none", "increase")
+    )
+  )
+
+df_adjust_same_sev %>%
+  ggplot(
+    aes(
+      x = pin_perc,
+      y = adjustment
+    )
+  ) +
+  geom_bar(
+    stat = "identity",
+    fill = "#1EBFB3",
+    width = 0.75
+  ) +
+  facet_wrap(
+    ~adm0_pcode
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto",
+      hjust = .5
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    axis.title.y = element_text(
+      face = "bold",
+      size = 12,
+      family = "Roboto",
+      margin = margin(r = 20)
+    ),
+    axis.title.x = element_text(
+      face = "bold",
+      size = 12,
+      family = "Roboto",
+      margin = margin(t = 20)
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.key.width = unit(1, "cm"),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  ) +
+  scale_x_continuous(
+    labels = scales::percent_format(1)
+  ) +
+  scale_y_discrete(
+    labels = c("Decrease", "None", "Increase")
+  ) +
+  labs(
+    x = "Mean PiN (% of affected population)",
+    y = "Severity adjustment, with same raw severity",
+    title = "Relationship between adjusted severity and PiN %"
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir_sev,
+    "graphs",
+    "2022_hno_compr_adjustment_pop_same_sev.png"
+  ),
+  width = 8,
+  height = 4,
+  units = "in"
+)
+
+write_csv(
+  df_adjust_same_sev,
+  file.path(
+    file_paths$output_dir_sev,
+    "graphs",
+    "datasets",
+    "2022_hno_compr_adjustment_pop_same_sev.csv"
+  )
+)
+
 
 ###################################################
 #### RELATIONSHIP SECTORAL SUM & INTERSECTORAL ####
@@ -1274,6 +1441,158 @@ write_csv(
   )
 )
 
+#########################################################
+#### JUST LOOK AT FREQUENCY OF BEING ABOVE AND BELOW ####
+#########################################################
+
+df_sect_is_comp2 <- df %>%
+  filter(
+    sector_general != "intersectoral",
+    !(adm0_pcode %in% c("NGA", "BDI", "TCD", "BFA", "MLI")), # no sector data
+    !(adm0_pcode %in% c("LBY", "VEN")), # insufficient intersector data
+    !is.na(severity),
+    severity > 0
+  ) %>%
+  left_join(
+    df %>%
+      filter(
+        sector == "Intersectoral"
+      ) %>%
+      select(
+        disaggregation,
+        intersectoral = severity
+      ),
+    by = "disaggregation"
+  ) %>%
+  mutate(
+    is_status = case_when(
+      intersectoral < severity ~ "lower",
+      intersectoral == severity ~ "same",
+      intersectoral > severity ~ "higher"
+    )
+  ) %>%
+  filter(
+    !is.na(is_status)
+  ) %>%
+  group_by(
+    sector,
+    severity,
+    is_status
+  ) %>%
+  summarize(
+    n = n(),
+    .groups = "drop_last"
+  ) %>%
+  mutate(
+    perc = n / sum(n)
+  )
+
+
+df_sect_is_comp2 %>%
+  complete(
+    severity = 1:5,
+    is_status = c(
+      "higher", "lower", "same"
+    ),
+    fill = list(
+      n = 0,
+      perc = 0
+    )
+  ) %>%
+  mutate(
+    is_status = factor(is_status, levels = c("lower", "same", "higher"))
+  ) %>%
+  ggplot(
+    aes(
+      y = severity,
+      x = is_status
+    )
+  ) +
+  geom_tile(
+    aes(
+      fill = perc
+    )
+  ) +
+  facet_wrap(
+    ~sector
+  ) +
+  labs(
+    y = "Sectoral severity",
+    title = "Comparison of sectoral and intersectoral severity",
+    x = "Intersectoral severity (relative to sectoral)",
+    fill = "% of areas"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto",
+      hjust = .5
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    axis.title.y = element_text(
+      face = "bold",
+      size = 12,
+      family = "Roboto",
+      margin = margin(r = 20)
+    ),
+    axis.title.x = element_text(
+      face = "bold",
+      size = 12,
+      family = "Roboto",
+      margin = margin(t = 20)
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.key.width = unit(1, "cm"),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  ) +
+  scale_fill_gradient(
+    low = "white",
+    high = "#1EBFB3",
+    labels = scales::percent_format()
+  )
+
+
+ggsave(
+  file.path(
+    file_paths$output_dir_sev,
+    "graphs",
+    "2022_hno_compr_sector_is_tiles_high_low.png"
+  ),
+  width = 10,
+  height = 8,
+  units = "in"
+)
+
+write_csv(
+  df_sect_is_comp2,
+  file.path(
+    file_paths$output_dir_sev,
+    "graphs",
+    "datasets",
+    "2022_hno_compr_sector_is_tiles_high_low.csv"
+  )
+)
+
 ##################################
 #### CORRELATIONS BETWEEN ALL ####
 ##################################
@@ -1297,10 +1616,12 @@ df_corr <- df %>%
   ) %>%
   as.matrix()
 
-cor(
+df_correlations <- cor(
   df_corr,
   use = "pairwise.complete.obs"
-) %>%
+)
+
+df_correlations %>%
   ggcorrplot(
     type = "lower",
     lab = TRUE,
@@ -1355,6 +1676,117 @@ write_csv(
     file_paths$output_dir_sev,
     "graphs",
     "datasets",
-    "2022_hno_compr_sector_is_tiles.csv"
+    "2022_hno_severity_corr.csv"
+  )
+)
+
+#########################################################
+#### AVERAGE SECTORAL CORRELATIONS VS IS CORRELATION ####
+#########################################################
+
+avg_sector_corr <- df_correlations %>%
+  as.data.frame() %>%
+  slice(-1) %>%
+  summarize(
+    across(
+      ERL:`Protection (HLP)`,
+      function(x) {
+        x <- x[x != 1]
+        mean(x, na.rm = TRUE)
+      }
+    )
+  ) %>%
+  pivot_longer(
+    everything(),
+    names_to = "sector",
+    values_to = "sector_corr"
+  )
+
+is_corr <- df_correlations %>%
+  as.data.frame() %>%
+  select(
+    -Intersectoral
+  ) %>%
+  slice(1) %>%
+  pivot_longer(
+    everything(),
+    names_to = "sector",
+    values_to = "is_corr"
+  )
+
+df_corr_avg <- full_join(
+  is_corr,
+  avg_sector_corr,
+  by = "sector"
+)
+
+df_corr_avg %>%
+  ggplot(
+    aes(
+      x = sector_corr,
+      y = is_corr
+    )
+  ) +
+  geom_point(
+    size = 3,
+    color = "#1EBFB3"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 16,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto",
+      hjust = 0
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 8,
+      family = "Roboto"
+    ),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
+  ) +
+  labs(
+    y = "Correlation with intersectoral severity",
+    x = "Average correlations with other sectors",
+    title = paste(
+      "Sectoral correlations and correlation with",
+      "final intersectoral severity"
+    )
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir_sev,
+    "graphs",
+    "2022_hno_severity_corr_avg.png"
+  ),
+  width = 8,
+  height = 4,
+  units = "in"
+)
+
+write_csv(
+  df_corr_avg,
+  file.path(
+    file_paths$output_dir_sev,
+    "graphs",
+    "datasets",
+    "2022_hno_severity_corr_avg.csv"
   )
 )
