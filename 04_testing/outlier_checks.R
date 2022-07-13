@@ -1332,7 +1332,7 @@ ggsave(
 
 df_diff_max_min <- df_max_min %>%
   mutate(
-    perc_diff_max = (max_pin - second_max_pin) / affected_population
+    perc_diff_max = (max_pin - second_max_pin) / max_pin
   ) %>%
   group_by(
     adm0_pcode
@@ -1343,8 +1343,14 @@ df_diff_max_min <- df_max_min %>%
   ) %>%
   mutate(
     is_outlier =
-      ifelse(perc_diff_max > mean_diff_max + (2 * std_diff_max), 1, 0)
-  ) %>%
+      ifelse(perc_diff_max > mean_diff_max + (2 * std_diff_max), 1, 0),
+    perc_max = max_pin / affected_population,
+    perc_max = ifelse(perc_max > 1, 1, perc_max),
+    perc_2max = second_max_pin / max_pin,
+    perc_2max = ifelse(perc_2max > 1, 1, perc_2max)
+  )
+
+diff_max_min_summarized <- df_diff_max_min %>%
   group_by(
     adm0_pcode
   ) %>%
@@ -1352,7 +1358,7 @@ df_diff_max_min <- df_max_min %>%
     perc_outlier = sum(is_outlier, na.rm = TRUE) / n()
   )
 
-df_diff_max_min %>%
+diff_max_min_summarized %>%
   ggplot(
     aes(
       x = reorder(adm0_pcode, +perc_outlier),
@@ -1417,13 +1423,179 @@ ggsave(
 )
 
 write_csv(
-  df_diff_max_min,
+  diff_max_min_summarized,
   file.path(
     file_paths$output_dir,
     "graphs",
     "Option 1",
     "datasets",
     "2022_perc_diff_max_2nd_max.csv"
+  )
+)
+
+# plotting outliers relation to % of PiN and % diff
+
+df_diff_max_min %>%
+  mutate(
+    is_outlier = ifelse(is_outlier == 1, "Outliers", "Non outliers")
+  ) %>%
+  ggplot() +
+  geom_point(aes(
+    x = perc_max,
+    y = perc_2max
+  ),
+  size = 3,
+  color = "#1EBFB3",
+  alpha = 0.3
+  ) +
+  scale_x_continuous(
+    labels = scales::percent_format(1)
+  ) +
+  scale_y_continuous(
+    labels = scales::percent_format(1)
+  ) +
+  facet_wrap(~is_outlier) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "none",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    ),
+    axis.title = element_text(
+      face = "bold",
+      size = 14,
+      family = "Roboto"
+    )
+  ) +
+  labs(
+    x = "Max PiN (as % of affected population)",
+    y = "Second max PiN (as % of max PiN)",
+    title = "Outleirs and non-outliers by max and second max PiN"
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "2022_outliers_max_2nd_max.png"
+  ),
+  height = 10,
+  width = 14
+)
+
+write_csv(
+  df_diff_max_min,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_outliers_max_2nd_max.csv"
+  )
+)
+
+df_diff_max_min %>%
+  mutate(
+    is_outlier = ifelse(is_outlier == 1, "Outliers", "Non outliers")
+  ) %>%
+  ggplot() +
+  geom_point(aes(
+    x = perc_max,
+    y = perc_diff_max
+  ),
+  size = 3,
+  color = "#1EBFB3",
+  alpha = 0.3
+  ) +
+  scale_x_continuous(
+    labels = scales::percent_format(1)
+  ) +
+  scale_y_continuous(
+    labels = scales::percent_format(1)
+  ) +
+  facet_wrap(~is_outlier) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 22,
+      margin = margin(10, 10, 10, 10, "pt"),
+      family = "Roboto"
+    ),
+    plot.background = element_rect(
+      fill = "white"
+    ),
+    axis.text = element_text(
+      face = "bold",
+      size = 10,
+      family = "Roboto"
+    ),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
+    legend.position = "none",
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent"),
+    legend.box.background = element_rect(fill = "transparent"),
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    ),
+    axis.title = element_text(
+      face = "bold",
+      size = 14,
+      family = "Roboto"
+    )
+  ) +
+  labs(
+    x = "Max PiN (as % of affected population)",
+    y = "% diff between max and second max PiN (as % of max PiN)",
+    title = "Outleirs and non-outliers by max and its % difference with second max PiN" # nolint
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "2022_outliers_max_diff.png"
+  ),
+  height = 10,
+  width = 14
+)
+
+write_csv(
+  df_diff_max_min,
+  file.path(
+    file_paths$output_dir,
+    "graphs",
+    "Option 1",
+    "datasets",
+    "2022_outliers_max_diff.csv"
   )
 )
 
@@ -1448,7 +1620,9 @@ df_outlier_adm1 <- df %>%
       ifelse(perc_pin > mean_pin + (2 * std_pin), 1, 0),
     is_lower_outlier =
       ifelse(perc_pin < mean_pin - (2 * std_pin), 1, 0)
-  ) %>%
+  )
+
+df_outlier_adm1_summ <- df_outlier_adm1 %>%
   group_by(
     adm0_pcode
   ) %>%
