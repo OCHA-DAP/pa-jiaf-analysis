@@ -1,14 +1,17 @@
 library(tidyverse)
 library(tidytext)
 library(ggcorrplot)
+library(gghdx)
+
+gghdx()
 
 source(here::here("99_helpers", "helpers.R"))
 
 file_paths <- get_paths_analysis()
 
-###################
+######################
 #### Reading Data ####
-###################
+######################
 
 df <- read_csv(
   file.path(
@@ -1790,3 +1793,412 @@ write_csv(
     "2022_hno_severity_corr_avg.csv"
   )
 )
+
+########################
+#### CHECK ANALYSIS ####
+########################
+
+# original proposal
+
+df_sev_test <- df %>%
+  group_by(
+    adm0_name,
+    disaggregation
+  ) %>%
+  filter(
+    sector_general != "intersectoral"
+  ) %>%
+  summarize(
+    is_severity = case_when(
+      sum(severity >= 5) / n() >= 0.2 ~ 5,
+      sum(severity >= 4) / n() >= 0.7 ~ 5,
+      sum(severity >= 3) / n() >= 0.7 ~ 4,
+      sum(severity >= 4) / n() >= 0.4 ~ 4,
+      sum(severity >= 3) / n() >= 0.4 ~ 3,
+      sum(severity >= 4) / n() >= 0.2 ~ 3,
+      sum(severity >= 2) / n() >= 0.4 ~ 2,
+      sum(severity >= 3) / n() >= 0.1 ~ 2,
+      TRUE ~ 1
+    )
+  )
+
+df_sev_test %>%
+  ggplot() +
+  geom_bar(
+    aes(
+      x = is_severity
+    )
+  ) +
+  facet_wrap(
+    ~adm0_name,
+    scales = "free_y"
+  ) +
+  labs(
+    x = "Intersectoral severity",
+    y = "# of areas",
+    title = "Test of intersectoral severity"
+  )
+
+# original intersectoral severity
+
+df %>%
+  filter(
+    sector_general == "intersectoral"
+  ) %>%
+  ggplot() +
+  geom_bar(
+    aes(
+      x = severity
+    )
+  ) +
+  facet_wrap(
+    ~adm0_name,
+    scales = "free_y"
+  ) +
+  labs(
+    x = "Intersectoral severity",
+    y = "# of areas",
+    title = "Original intersectoral severity"
+  )
+
+
+df_sev_test %>%
+  left_join(
+    df %>%
+      filter(
+        sector_general == "intersectoral"
+      ) %>%
+      select(
+        adm0_name,
+        disaggregation,
+        orig_severity = severity
+      )
+  ) %>%
+  group_by(
+    adm0_name,
+    is_severity,
+    orig_severity
+  ) %>%
+  summarize(
+    n = n(),
+    .groups = "drop"
+  ) %>%
+  group_by(
+    adm0_name
+  ) %>%
+  mutate(
+    pct = n / sum(n)
+  ) %>%
+  filter(
+    !is.na(orig_severity),
+    adm0_name != "Somalia"
+  ) %>%
+  ggplot() +
+  geom_tile(
+    aes(
+      x = is_severity,
+      y = orig_severity,
+      fill = pct
+    )
+  ) +
+  facet_wrap(
+    ~adm0_name
+  ) +
+  labs(
+    y = "Original severity",
+    x = "Testing severity",
+    fill = "% of units",
+    title = "Relationship between original and tested intersectoral severity"
+  ) +
+  geom_text(
+    aes(
+      x = is_severity,
+      y = orig_severity,
+      label = scales::percent(pct, accuracy = 1)
+    )
+  ) +
+  scale_fill_continuous(
+    labels = scales::percent_format()
+  )
+
+
+#######################
+#### ANALYSIS IDEA ####
+#######################
+
+pcts <- seq(0.4, 0.8, 0.01)
+
+df_sev5_test <- map_dfr(
+  .x = pcts,
+  .f = ~ df %>%
+    group_by(
+      adm0_name,
+      disaggregation
+    ) %>%
+    filter(
+      sector_general != "intersectoral"
+    ) %>%
+    summarize(
+      threshold = .x,
+      severity_5 = sum(severity >= 5) / n() >= .x,
+      .groups = "drop_last"
+    ) %>%
+    summarize(
+      threshold = unique(threshold),
+      pct_severity_5 = sum(severity_5) / n()
+    )
+)
+
+df_sev5_test %>%
+  ggplot(
+    aes(
+      x = threshold,
+      y = pct_severity_5
+    )
+  ) +
+  geom_bar(
+    stat = "identity"
+  ) +
+  scale_x_continuous(
+    labels = scales::percent_format()
+  ) +
+  scale_y_continuous(
+    labels = scales::percent_format()
+  ) +
+  facet_wrap(
+    ~adm0_name,
+    scales = "free_y"
+  ) +
+  labs(
+    x = "Threshold: % of sectors in 4+",
+    y = "% of units in phase 5",
+    title = "Impact of % threshold on phase 5 classifications"
+  )
+
+##############################
+#### % sectors in phase 5 ####
+##############################
+
+df %>%
+  group_by(
+    adm0_name,
+    disaggregation
+  ) %>%
+  summarize(
+    n_5 = sum(severity == 5),
+    n_4 = sum(severity == 4),
+    .groups = "drop"
+  ) %>%
+  group_by(
+    adm0_name,
+    n_5,
+    n_4
+  ) %>%
+  summarize(
+    n = n()
+  ) %>%
+  group_by(
+    adm0_name
+  ) %>%
+  mutate(
+    pct = n / sum(n)
+  ) %>%
+  ggplot(
+    aes(
+      x = n_4,
+      y = n_5
+    )
+  ) +
+  geom_tile(
+    aes(
+      fill = pct
+    )
+  ) +
+  facet_wrap(
+    ~adm0_name
+  ) +
+  scale_y_continuous(
+    breaks = scales::pretty_breaks()
+  ) +
+  scale_x_continuous(
+    breaks = scales::pretty_breaks()
+  ) +
+  scale_fill_continuous(
+    labels = scales::percent_format()
+  ) +
+  geom_text(
+    aes(
+      label = scales::percent(pct, accuracy = 1)
+    ),
+    size = 3
+  ) +
+  geom_vline(
+    xintercept = 2.5,
+    color = hdx_hex("tomato-hdx")
+  ) +
+  geom_hline(
+    yintercept = 0.5,
+    color = hdx_hex("tomato-hdx")
+  ) +
+  labs(
+    x = "# of sectors in phase 4",
+    y = "# of sectors in phase 5",
+    fill = "% of units of analysis",
+    title = "Instances of sectors in phase 4 and phase 5"
+  ) +
+  geom_label_hdx(
+    data = data.frame(
+      adm0_name = "Burkina Faso",
+      n_4 = 8,
+      n_5 = 5
+    ),
+    label = "3 or more sectors in phase 4\nand at least 1 in phase 5"
+  )
+
+######################
+#### NEW ANALYSIS ####
+######################
+
+df_test_flags <- df %>%
+  filter(
+    sector_general != "intersectoral"
+  ) %>%
+  group_by(
+    adm0_name,
+    disaggregation
+  ) %>%
+  summarize(
+    test_severity = case_when(
+      any(severity == 5) & (sum(severity >= 4) / n() >= 0.5) ~ 5,
+      sum(severity >= 4) / n() >= 0.5 ~ 4,
+      sum(severity >= 3) / n() >= 0.5 ~ 3,
+      sum(severity >= 2) / n() >= 0.5 ~ 2,
+      TRUE ~ 1
+    ),
+    test_flag = case_when(
+      sum(severity >= 4) / n() >= 0.625 ~ 5,
+      sum(severity >= 3) / n() >= 0.625 ~ 4,
+      sum(severity >= 2) / n() >= 0.625 ~ 3,
+      any(severity >= 2) ~ 2,
+      TRUE ~ 1
+    ),
+    .groups = "drop_last"
+  ) %>%
+  mutate(
+    flagged = ifelse(
+      test_flag > test_severity,
+      "Flagged",
+      "Not flagged"
+    )
+  )
+
+df_test_flags %>%
+  ggplot(
+    aes(
+      x = test_severity,
+      fill = flagged
+    )
+  ) +
+  geom_bar() +
+  facet_wrap(
+    ~adm0_name,
+    scales = "free_y"
+  ) +
+  scale_fill_manual(
+    values = unname(hdx_hex(c("tomato-hdx", "mint-hdx")))
+  ) +
+  labs(
+    x = "# of units",
+    y = "Severity",
+    fill = "",
+    title = "Test severity and flags"
+  )
+
+df %>%
+  filter(
+    sector_general != "intersectoral"
+  ) %>%
+  group_by(
+    adm0_name,
+    disaggregation
+  ) %>%
+  summarize(
+    max_pin = max(pin),
+    max_sev = max(severity),
+    max_pin_sev = max(severity[pin == max(pin)]),
+    .groups = "drop_last"
+  ) %>%
+  filter(
+    !is.na(max_pin)
+  ) %>%
+  summarize(
+    pct = sum(max_pin_sev == max_sev) / n()
+  )
+
+df %>%
+  filter(
+    sector_general != "intersectoral"
+  ) %>%
+  group_by(
+    adm0_name,
+    disaggregation
+  ) %>%
+  summarize(
+    max_pin = max(pin),
+    max_sev = max(severity),
+    max_sev_pin = max(pin[severity == max(severity)]),
+    max_sev_pin_pct = max_sev_pin / max_pin,
+    .groups = "drop"
+  ) %>%
+  filter(
+    !is.na(max_pin)
+  ) %>%
+  ggplot(
+    aes(
+      x = max_sev_pin_pct
+    )
+  ) +
+  geom_histogram() +
+  facet_wrap(
+    ~max_sev,
+    scales = "free_y"
+  ) +
+  labs(
+    title = "Max PiN for sector with max severity, as % of overall max PiN",
+    x = "Max sev PiN (% of max PiN)",
+    y = ""
+  )
+
+df %>%
+  filter(
+    sector_general != "intersectoral"
+  ) %>%
+  group_by(
+    adm0_name,
+    disaggregation
+  ) %>%
+  summarize(
+    max_pin = max(pin),
+    max_sev = max(severity),
+    min_sev_pin = min(pin[severity == max(severity)]),
+    min_sev_pin_pct = min_sev_pin / max_pin,
+    .groups = "drop"
+  ) %>%
+  filter(
+    !is.na(max_pin)
+  ) %>%
+  ggplot(
+    aes(
+      x = min_sev_pin_pct
+    )
+  ) +
+  geom_histogram() +
+  facet_wrap(
+    ~max_sev,
+    scales = "free_y"
+  ) +
+  labs(
+    title = "Min PiN for sector with max severity, as % of overall max PiN",
+    x = "Min sev PiN (% of max PiN)",
+    y = ""
+  )

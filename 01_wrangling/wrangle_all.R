@@ -13,11 +13,12 @@ walk(
   wrangle_files,
   function(x) {
     print(x)
-    run(
+    source(
       file.path(
         "01_wrangling",
         x
-      )
+      ),
+      verbose = FALSE
     )
   }
 )
