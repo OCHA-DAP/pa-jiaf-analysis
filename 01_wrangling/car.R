@@ -60,11 +60,12 @@ df_cccm <- read_excel(
   )
 
 # Education cluster data
-df_education <- read_excel(file.path(
-  file_paths$ocha_dir,
-  "CAR_HNO_2022_Education.xlsx"
-),
-sheet = "Final_pop_numbers_vFINAL_OCHA"
+df_education <- read_excel(
+  file.path(
+    file_paths$ocha_dir,
+    "CAR_HNO_2022_Education.xlsx"
+  ),
+  sheet = "Final_pop_numbers_vFINAL_OCHA"
 ) %>%
   clean_names() %>%
   filter(!is.na(pcode_pref)) %>%
@@ -173,11 +174,12 @@ df_health <- read_excel(
   )
 
 # Protection GBV cluster data, at admin 1 level
-df_gbv <- read_excel(file.path(
-  file_paths$ocha_dir,
-  "CAR_HNO_2022_VBG.xlsx"
-),
-sheet = "3-PIN"
+df_gbv <- read_excel(
+  file.path(
+    file_paths$ocha_dir,
+    "CAR_HNO_2022_VBG.xlsx"
+  ),
+  sheet = "3-PIN"
 ) %>%
   clean_names() %>%
   transmute(prefecture,
@@ -204,11 +206,12 @@ df_wash <- read_excel(
   )
 
 # Pcodes
-df_pcodes <- read_excel(file.path(
-  file_paths$ocha_dir,
-  "CAR_HNO_2022_Protection_VF.xlsx"
-),
-sheet = "Pop_SPref2022HorsRef"
+df_pcodes <- read_excel(
+  file.path(
+    file_paths$ocha_dir,
+    "CAR_HNO_2022_Protection_VF.xlsx"
+  ),
+  sheet = "Pop_SPref2022HorsRef"
 ) %>%
   clean_names() %>%
   filter(row_number() < 80) %>%
