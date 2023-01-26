@@ -1809,10 +1809,12 @@ temp <- df %>%
     adm0_pcode,
     disaggregation
   ) %>%
-  summarize(difference = severity[1] - severity[2],
-         outlier = ifelse(difference > 1, TRUE, FALSE),
-         sector = sector[1],
-         severity = severity[1]) %>%
+  summarize(
+    difference = severity[1] - severity[2],
+    outlier = ifelse(difference > 1, TRUE, FALSE),
+    sector = sector[1],
+    severity = severity[1]
+  ) %>%
   filter(
     !is.na(outlier)
   ) %>%
@@ -1836,7 +1838,7 @@ temp %>%
   ) +
   geom_col(
     position = "dodge"
-  ) +  
+  ) +
   gghdx::geom_text_hdx(
     position = position_dodge(0.9),
     vjust = -0.5,
@@ -1845,8 +1847,10 @@ temp %>%
   facet_wrap(~adm0_pcode, scales = "free_y") +
   labs(
     y = "# of areas",
-    title = paste("Degrees of differences between highest and second highest",
-                  "sectoral severity at unit of analysis per country"),
+    title = paste(
+      "Degrees of differences between highest and second highest",
+      "sectoral severity at unit of analysis per country"
+    ),
     x = "Highest sectoral severity",
     fill = "Degree of differences"
   ) +

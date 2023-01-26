@@ -4,8 +4,10 @@ source(here::here("99_helpers", "helpers.R"))
 
 file_paths <- get_paths_analysis()
 
-df <- read_csv(file.path(file_paths$agg_dir,
-                         "2022_sectoral_sev.csv")) %>%
+df <- read_csv(file.path(
+  file_paths$agg_dir,
+  "2022_sectoral_sev.csv"
+)) %>%
   filter(sector_general != "intersectoral") %>%
   mutate(disag = paste0(
     adm1_name,
@@ -14,8 +16,10 @@ df <- read_csv(file.path(file_paths$agg_dir,
     population_group,
     administration
   )) %>%
-  group_by(adm0_name,
-           disag) %>%
+  group_by(
+    adm0_name,
+    disag
+  ) %>%
   mutate(n_sectors = n()) %>%
   group_by(adm0_name) %>%
   mutate(
@@ -26,8 +30,10 @@ df <- read_csv(file.path(file_paths$agg_dir,
   filter(n_sectors > 3)
 
 df_calc <- df %>%
-  group_by(adm0_name,
-           disag) %>%
+  group_by(
+    adm0_name,
+    disag
+  ) %>%
   summarize(
     s_5 = sum(severity == 5, na.rm = TRUE),
     s_4 = sum(severity == 4, na.rm = TRUE),
@@ -49,41 +55,47 @@ df_calc <- df %>%
     ),
     flag1 = case_when(s_5 > 0 ~ "Flag 1: 1 or more sectors in phase 5"),
     flag2 = case_when(
-      s_4 >= 5 | s_4 / n_sectors >= 0.75 ~ 
+      s_4 >= 5 | s_4 / n_sectors >= 0.75 ~
         "Flag 2: 5 or more, or at least 75% of sectors in phase 4"
     ),
     flag3 = case_when(
       preliminary == 3 &
         (s_3 + s_4 + s_5 >= 5 | (s_3 + s_4 + s_5) / n_sectors >= 0.75) ~ paste(
-          "Flag 3: 5 or more, or at least 75% of sectors in phase 3 or worse",
-          "and preliminary in phase 3"
-        )
+        "Flag 3: 5 or more, or at least 75% of sectors in phase 3 or worse",
+        "and preliminary in phase 3"
+      )
     ),
     flag4a = case_when(
-      mean_sectors <= preliminary - 1 ~ 
+      mean_sectors <= preliminary - 1 ~
         "Flag 4: Preliminary is at least 1 phases away from average."
     ),
     flag4b = case_when(
-      mean_sectors <= preliminary - 1.5 ~ 
+      mean_sectors <= preliminary - 1.5 ~
         "Flag 4: Preliminary is at least 1.5 phases away from average."
     ),
     flag4c = case_when(
-      mean_sectors <= preliminary - 2 ~ 
+      mean_sectors <= preliminary - 2 ~
         "Flag 4: Preliminary is at least 2 phases away from average."
     )
   ) %>%
-  pivot_longer(cols = matches("flag"),
-               values_to = "flags") %>%
-  select(adm0_name,
-         disag,
-         preliminary,
-         flags) %>%
+  pivot_longer(
+    cols = matches("flag"),
+    values_to = "flags"
+  ) %>%
+  select(
+    adm0_name,
+    disag,
+    preliminary,
+    flags
+  ) %>%
   unique()
 
 df_calc %>%
-  group_by(adm0_name,
-           preliminary,
-           flags) %>%
+  group_by(
+    adm0_name,
+    preliminary,
+    flags
+  ) %>%
   summarize(n_units_flagged = n()) %>%
   filter(!is.na(flags)) %>%
   ggplot(aes(
@@ -93,8 +105,10 @@ df_calc %>%
     fill = flags,
     color = flags
   )) +
-  geom_col(position = position_dodge(width = 0.9),
-           width = 0.9) +
+  geom_col(
+    position = position_dodge(width = 0.9),
+    width = 0.9
+  ) +
   geom_text(
     aes(color = flags),
     size = 3,
@@ -103,20 +117,25 @@ df_calc %>%
     position = position_dodge(0.9),
     inherit.aes = TRUE
   ) +
-  scale_fill_manual(values = c("#66B0EC",
-                               "#F2645A",
-                               "#85ab67",
-                               "#FFBF00",
-                               "#ba6594",
-                               "#626c9e")) +
-  scale_color_manual(values = c("#66B0EC",
-                               "#F2645A",
-                               "#85ab67",
-                               "#FFBF00",
-                               "#ba6594",
-                               "#626c9e")) +
-  facet_wrap(~ adm0_name,
-             scales = "free_y") +
+  scale_fill_manual(values = c(
+    "#66B0EC",
+    "#F2645A",
+    "#85ab67",
+    "#FFBF00",
+    "#ba6594",
+    "#626c9e"
+  )) +
+  scale_color_manual(values = c(
+    "#66B0EC",
+    "#F2645A",
+    "#85ab67",
+    "#FFBF00",
+    "#ba6594",
+    "#626c9e"
+  )) +
+  facet_wrap(~adm0_name,
+    scales = "free_y"
+  ) +
   labs(
     x = "Severity",
     title = paste(
@@ -128,7 +147,8 @@ df_calc %>%
   ) +
   scale_y_continuous(
     labels = scales::number,
-    expand = c(0.20, 0)) +
+    expand = c(0.20, 0)
+  ) +
   guides(fill = guide_legend(nrow = 3), color = "none") +
   theme_minimal() +
   theme(
@@ -157,14 +177,18 @@ df_calc %>%
       family = "Roboto",
       margin = margin(t = 20)
     ),
-    legend.text = element_text(size = 12,
-                               family = "Roboto"),
+    legend.text = element_text(
+      size = 12,
+      family = "Roboto"
+    ),
     legend.position = "bottom",
     panel.grid.minor = element_blank(),
     legend.background = element_rect(fill = "transparent"),
     legend.box.background = element_rect(fill = "transparent"),
-    strip.text = element_text(size = 16,
-                              family = "Roboto")
+    strip.text = element_text(
+      size = 16,
+      family = "Roboto"
+    )
   )
 
 ggsave(
