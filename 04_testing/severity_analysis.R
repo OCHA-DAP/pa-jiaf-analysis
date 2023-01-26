@@ -1790,3 +1790,95 @@ write_csv(
     "2022_hno_severity_corr_avg.csv"
   )
 )
+
+################################################
+
+# frequency of sectors being 3 or above
+temp <- df %>%
+  filter( # filtering out those that are not of interest
+    !is.na(severity) &
+      sector_general != "intersectoral" &
+      severity > 0
+  ) %>%
+  arrange(
+    adm0_pcode,
+    disaggregation,
+    desc(severity)
+  ) %>%
+  group_by(
+    adm0_pcode,
+    disaggregation
+  ) %>%
+  summarize(
+    difference = severity[1] - severity[2],
+    outlier = ifelse(difference > 1, TRUE, FALSE),
+    sector = sector[1],
+    severity = severity[1]
+  ) %>%
+  filter(
+    !is.na(outlier)
+  ) %>%
+  group_by(
+    adm0_pcode,
+    difference,
+    severity
+  ) %>%
+  summarize(
+    n = n()
+  )
+
+temp %>%
+  ggplot(
+    aes(
+      x = severity,
+      y = n,
+      fill = factor(difference),
+      label = n
+    )
+  ) +
+  geom_col(
+    position = "dodge"
+  ) +
+  gghdx::geom_text_hdx(
+    position = position_dodge(0.9),
+    vjust = -0.5,
+    size = 2.5
+  ) +
+  facet_wrap(~adm0_pcode, scales = "free_y") +
+  labs(
+    y = "# of areas",
+    title = paste(
+      "Degrees of differences between highest and second highest",
+      "sectoral severity at unit of analysis per country"
+    ),
+    x = "Highest sectoral severity",
+    fill = "Degree of differences"
+  ) +
+  scale_y_continuous(
+    expand = expansion(c(0, .2))
+  ) +
+  gghdx::gghdx(showtext = FALSE) +
+  scale_fill_manual(
+    values = c("#FCF2F2", "#FCE0DE", "#F7A29C", "#FF0000", "#ae5049")
+  )
+
+ggsave(
+  file.path(
+    file_paths$output_dir_sev,
+    "graphs",
+    "2022_number_sectors_3_above.png"
+  ),
+  height = 6,
+  width = 10,
+  units = "in"
+)
+
+write_csv(
+  temp,
+  file.path(
+    file_paths$output_dir_sev,
+    "graphs",
+    "datasets",
+    "2022_number_sectors_3_above.csv"
+  )
+)
